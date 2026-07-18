@@ -979,6 +979,8 @@ class StoreApp(KitApp):
         if idx is None or idx >= len(pool):
             return
         entry = pool[idx]
+        if entry is self.current:
+            return  # a programmatic re-highlight of the same row — don't re-hydrate
         self.current = entry
         self.render_detail(entry)
         self.hydrate(entry.slug)
@@ -1104,7 +1106,16 @@ class StoreApp(KitApp):
             hint.append(f"{lbl}   ", style=p.dim)
         t.append_text(hint)
 
+        # keep the reader's place when a background refresh re-renders the SAME
+        # tool; only reset to the top when we've switched to a different tool
+        scroll = self.query_one("#detailscroll")
+        same = getattr(self, "_detail_slug", None) == entry.slug
+        keep_y = scroll.scroll_offset.y if same else 0
         self.query_one("#d-body", Static).update(t)
+        self._detail_slug = entry.slug
+        if keep_y:
+            self.call_after_refresh(
+                lambda y=keep_y: self.query_one("#detailscroll").scroll_to(y=y, animate=False))
         dv = self.query_one("#detail")
         dv.border_title = f"{icons.INFO_CIRCLE} {entry.name}"
         dv.border_subtitle = entry.category
@@ -1130,8 +1141,10 @@ class StoreApp(KitApp):
                 entry.stars = info["stars"]
             if info.get("pushed_at"):
                 entry.pushed_at = info["pushed_at"]
+            # only re-render the detail pane — NOT the results list. Rebuilding
+            # the list here re-fires OptionHighlighted, which restarts hydrate in
+            # a loop that clears the list and snaps the scroll back to the top.
             self.render_detail(entry)
-            self.render_results(preserve=True)
         # lazy README scrape when we don't have verified methods yet
         has_verified = any(m.source in ("readme", "official") for m in entry.methods)
         if not has_verified and slug not in self._scraped:
