@@ -1046,7 +1046,17 @@ class StoreApp(KitApp):
             t.append("\n\n")
         elif st == "present":
             t.append(f"{icons.CHECK_CIRCLE} installed", style=f"bold {p.green}")
-            t.append("  · not via tuistore — manage it with your package manager", style=p.dim)
+            t.append("  · detected on your PATH", style=p.dim)
+            rec, _ = self._manage_rec(entry)
+            if rec:
+                t.append("     ")
+                t.append("u", style=p.blue)
+                t.append(" update  ", style=p.dim)
+                t.append("x", style=p.blue)
+                t.append(" uninstall", style=p.dim)
+                t.append("\n")
+                t.append("  tuistore didn't record this install — manage commands are a best guess",
+                         style=p.faint)
             t.append("\n\n")
         # author note (Gheat's suite)
         if entry.author_note:
@@ -1198,44 +1208,62 @@ class StoreApp(KitApp):
         self.push_screen(ReadmeModal(self.current))
 
     # ── manage installed tools ─────────────────────────────────────────
+    def _manage_rec(self, entry: Entry) -> tuple[dict | None, bool]:
+        """Return (record, guessed). For tools tuistore installed, the exact
+        ledger record. For tools merely detected on PATH, a best-guess record
+        from the best method this machine can run (guessed=True)."""
+        st = self.status_of(entry)
+        if st == "managed":
+            return self.ledger.get(entry.slug), False
+        if st == "present":
+            m = best(entry.methods, self.env)
+            if not m or not m.available(self.env):
+                return None, False
+            pkg = inst.pkg_from_command(m.kind, m.command) or entry.name.lower()
+            return {"name": entry.name, "kind": m.kind, "command": m.command,
+                    "pkg": pkg, "bin": pkg}, True
+        return None, False
+
     def action_update(self) -> None:
         e = self.current
         if not e:
             return
-        st = self.status_of(e)
-        if st != "managed":
-            msg = ("installed outside tuistore — update it with your package manager"
-                   if st == "present" else f"{e.name} isn't installed")
-            self.notify(msg, severity="warning")
+        rec, guessed = self._manage_rec(e)
+        if not rec:
+            self.notify(f"{e.name} isn't installed", severity="warning")
             return
-        rec = self.ledger.get(e.slug, {})
         cmd = inst.update_command(rec)
         if not cmd:
             self.notify(f"no update command for a {rec.get('kind','?')} install",
                         severity="warning")
             return
+        sub = f"via {rec.get('kind','')}"
+        if guessed:
+            sub += " · guessed — tuistore didn't install this"
         self.push_screen(RunModal(
             f"{icons.REFRESH} update {e.name}", cmd,
-            subtitle=f"via {rec.get('kind','')}", verb="update",
+            subtitle=sub, verb="update", danger=guessed,
             on_success=lambda: self._after_manage(e.slug)))
 
     def action_uninstall(self) -> None:
         e = self.current
         if not e:
             return
-        if self.status_of(e) != "managed":
-            self.notify("only tools installed via tuistore can be removed here",
-                        severity="warning")
+        rec, guessed = self._manage_rec(e)
+        if not rec:
+            self.notify(f"{e.name} isn't installed", severity="warning")
             return
-        rec = self.ledger.get(e.slug, {})
         cmd = inst.uninstall_command(rec)
         if not cmd:
             self.notify(f"no uninstall command for a {rec.get('kind','?')} install",
                         severity="warning")
             return
+        sub = f"removes {e.name} ({rec.get('kind','')})"
+        if guessed:
+            sub += " · guessed — tuistore didn't install this, check it's right"
         self.push_screen(RunModal(
             f"{icons.TRASH} uninstall {e.name}", cmd,
-            subtitle=f"removes {e.name} ({rec.get('kind','')})", danger=True,
+            subtitle=sub, danger=True,
             verb="uninstall", on_success=lambda: self._after_uninstall(e.slug)))
 
     def _after_manage(self, slug: str) -> None:
