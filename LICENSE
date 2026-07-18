@@ -1,3 +1,43 @@
+tuistore
+Copyright (C) 2026 Gheat <https://github.com/Gheat1>
+
+This program is free software: you may redistribute it and/or modify it under
+the terms of the GNU General Public License, version 3 or (at your option) any
+later version, as published by the Free Software Foundation, TOGETHER WITH THE
+ADDITIONAL TERMS BELOW, which are authorized by Section 7 of that license.
+
+====================================================================
+ADDITIONAL TERMS  (per Section 7 of the GNU General Public License v3)
+====================================================================
+
+The freedoms of the GNU GPL still apply. The following additional terms exist
+only to protect the identity of this project — they do not restrict your right
+to use, study, or run the software:
+
+  1. NAME & BRANDING  (GPL v3, Section 7(e) — trademark).
+     The names "tuistore" and "Gheat", the shopping-bag mark, and the
+     project's logos and branding are NOT licensed to you. If you fork,
+     modify, or redistribute this software, you MUST give your version a
+     clearly different name and remove the project's branding, so that your
+     version is not presented or distributed as "tuistore".
+
+  2. ATTRIBUTION  (GPL v3, Section 7(b)–(c)).
+     You must preserve all copyright and author notices in the source, and
+     retain visible credit to the original author (Gheat) together with a
+     link to the original repository:
+     https://github.com/Gheat1/tuistore
+
+  3. NO MISREPRESENTATION OF ORIGIN  (GPL v3, Section 7).
+     You may not misrepresent the origin of this software or claim that you
+     are the original author of it. Modified versions must be clearly marked
+     as changed from the original, in accordance with Section 5(a).
+
+Removing or altering these additional terms where they apply is not permitted.
+Except for the terms above, this software is governed entirely by the GNU
+General Public License v3.0 or later, the full text of which follows.
+
+--------------------------------------------------------------------
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 

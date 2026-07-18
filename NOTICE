@@ -1,0 +1,17 @@
+tuistore
+Copyright (C) 2026 Gheat  ·  https://github.com/Gheat1/tuistore
+
+Licensed under the GNU General Public License v3.0 or later, WITH ADDITIONAL
+TERMS under Section 7 of that license (see the LICENSE file). In short:
+
+  • You may use, study, and run this software freely.
+  • If you fork or redistribute it, you MUST rename it and remove the
+    "tuistore" / "Gheat" names and branding — you may not ship it as
+    "tuistore".
+  • You must keep the copyright/author notices and credit the original
+    author with a link back to https://github.com/Gheat1/tuistore.
+  • You may not misrepresent the origin of the work or claim you authored
+    the original. Modified versions must be marked as changed.
+
+This is the same protection GPLv3 Section 7 exists for: fork it if you like,
+but don't pass my work off as your own project.

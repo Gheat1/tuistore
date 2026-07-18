@@ -163,5 +163,15 @@ The awesome-tuis list itself is the upstream source for most entries.
 
 ## license
 
-[GPL-3.0-or-later](LICENSE) — made by [@Gheat1](https://github.com/Gheat1), built on
+[**GPL-3.0-or-later**](LICENSE), **with additional terms under Section 7** (see
+[`LICENSE`](LICENSE) / [`NOTICE`](NOTICE)):
+
+- the **tuistore** name, the 🛍️ mark, and Gheat's branding are reserved — a
+  fork or redistribution **must be renamed** and de-branded, so it can't be
+  passed off as tuistore;
+- **attribution** to the original author + a link back must be preserved;
+- you may **not misrepresent the origin** or claim you authored the original.
+
+Fork it and hack on it all you like — just don't ship my work as your own
+project. Made by [@Gheat1](https://github.com/Gheat1), built on
 [ricekit](https://github.com/Gheat1/ricekit).
