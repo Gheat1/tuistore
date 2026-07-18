@@ -111,13 +111,20 @@ class InstallModal(ModalScreen):
     InstallModal #hint { padding: 1 0 0 0; }
     """
 
-    def __init__(self, entry: Entry, method: Method, alternatives: list[Method]) -> None:
+    def __init__(self, entry: Entry, method: Method, alternatives: list[Method],
+                 force: bool = False) -> None:
         super().__init__()
         self.entry = entry
         self.method = method
         self.alternatives = alternatives
+        self.force = force  # reinstall over an existing copy
         self.running = False
         self.done = False
+
+    def _cmd(self) -> str:
+        from .installer import force_variant
+        return force_variant(self.method.kind, self.method.command) if self.force \
+            else self.method.command
 
     def compose(self) -> ComposeResult:
         with Vertical(id="box"):
@@ -136,13 +143,15 @@ class InstallModal(ModalScreen):
     def _refresh_view(self) -> None:
         e, m = self.entry, self.method
         title = Text()
-        title.append(f"{icons.PLUG}  install ", style=palette.blue)
+        title.append(f"{icons.PLUG}  {'reinstall' if self.force else 'install'} ", style=palette.blue)
         title.append(e.name, style=f"bold {palette.text}")
+        if self.force:
+            title.append("  · already installed", style=palette.dim)
         self.query_one("#title", Static).update(title)
 
         cmd = Text()
         cmd.append("$ ", style=palette.dim)
-        cmd.append(m.command, style=palette.text)
+        cmd.append(self._cmd(), style=palette.text)
         self.query_one("#cmd", Static).update(cmd)
 
         env, p = self.app.env, palette
@@ -260,7 +269,7 @@ class InstallModal(ModalScreen):
             log = self.query_one("#log")
             log.scroll_end(animate=False)
 
-        async for kind, payload in run_stream(self.method.command):
+        async for kind, payload in run_stream(self._cmd()):
             if kind == "out":
                 lines.append(payload)
                 if len(lines) % 2 == 0 or len(lines) < 12:
@@ -1225,7 +1234,8 @@ class StoreApp(KitApp):
             return
         chosen = best(entry.methods, self.env)
         alternatives = [m for m in methods if m is not chosen]
-        self.push_screen(InstallModal(entry, chosen, alternatives))
+        force = self.status_of(entry) is not None  # already installed -> reinstall
+        self.push_screen(InstallModal(entry, chosen, alternatives, force=force))
 
     def action_read_readme(self) -> None:
         if not self.current:

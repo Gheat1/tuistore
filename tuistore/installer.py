@@ -166,6 +166,17 @@ def make(kind: str, command: str, source: str = "inferred", note: str = "") -> M
     )
 
 
+def force_variant(kind: str, command: str) -> str:
+    """Rewrite an install command to force a reinstall over an existing copy."""
+    if kind in ("uv", "pipx", "cargo", "cargo-binstall") and "--force" not in command:
+        return f"{command} --force"
+    if kind == "pip" and "--force-reinstall" not in command:
+        return f"{command} --force-reinstall"
+    if kind == "brew" and command.strip().startswith("brew install"):
+        return command.replace("brew install", "brew reinstall", 1)
+    return command  # go/npm/gem/distro managers reinstall on re-run anyway
+
+
 # ── classify a raw command line into a kind ────────────────────────────────
 _CLASSIFY = [
     ("cargo-binstall", re.compile(r"\bcargo\s+binstall\b")),

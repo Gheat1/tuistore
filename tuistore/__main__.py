@@ -18,7 +18,7 @@
     tuistore --doctor              what your machine looks like to the engine
     tuistore --version
 
-install flags:  -y/--yes (no prompt)   --dry-run   --method <kind>
+install flags:  -y/--yes (no prompt)   -f/--force (reinstall)   --dry-run   --method <kind>
 """
 
 from __future__ import annotations
@@ -73,9 +73,10 @@ def _resolve(name: str, *, quiet: bool = False):
 
 
 # ── install ─────────────────────────────────────────────────────────────────
-def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None) -> int:
-    from .installer import best, rank
-    from .installed import record_install, status, load_ledger, path_binaries
+def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None,
+                 force: bool = False) -> int:
+    from .installer import best, rank, force_variant
+    from .installed import record_install, status, load_ledger, path_binaries, scan_installed
     from .platform import detect
 
     entry = _resolve(name)
@@ -87,8 +88,9 @@ def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None
         print(f"{entry.name}: no known install method. see {entry.homepage or entry.url}")
         return 1
 
-    if status(entry.slug, entry.name, entry.methods, load_ledger(), path_binaries()):
-        print(f"{entry.name} is already installed.")
+    if not force and status(entry.slug, entry.name, entry.methods, load_ledger(),
+                            path_binaries(), scan_installed(env)):
+        print(f"{entry.name} is already installed.  (use --force to reinstall)")
         return 0
 
     ranked = rank(entry.methods, env)
@@ -109,21 +111,22 @@ def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None
             print(f"    {m.label:<18} {m.command}   [{m.why_unavailable(env)}]")
         return 1
 
+    cmd = force_variant(chosen.kind, chosen.command) if force else chosen.command
     trust = {"verified": "✓ verified", "community": "✓ from README",
              "unverified": "⚠ unverified — guessed"}[chosen.trust]
     if chosen.is_script:
         trust = "⚠ remote install script — review it"
-    print(f"{entry.name}  ({entry.slug})")
-    print(f"  {chosen.command}")
+    print(f"{entry.name}  ({entry.slug})" + ("  · reinstall" if force else ""))
+    print(f"  {cmd}")
     print(f"  via {chosen.label} · {trust}")
 
     if dry_run:
         return 0
-    if not _confirm("install?", yes):
+    if not _confirm("reinstall?" if force else "install?", yes):
         print("cancelled.")
         return 1
 
-    code = _run(chosen.command)
+    code = _run(cmd)
     if code == 0:
         record_install(entry.slug, entry.name, chosen)
         print(f"✓ installed {entry.name} — manage with `tuistore update/remove {entry.name}`")
@@ -133,7 +136,7 @@ def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None
 
 
 def _cmd_install(args: list[str]) -> int:
-    yes = dry_run = False
+    yes = dry_run = force = False
     method_kind = None
     names: list[str] = []
     i = 0
@@ -141,6 +144,8 @@ def _cmd_install(args: list[str]) -> int:
         a = args[i]
         if a in ("-y", "--yes"):
             yes = True
+        elif a in ("-f", "--force"):
+            force = True
         elif a == "--dry-run":
             dry_run = True
         elif a == "--method" and i + 1 < len(args):
@@ -153,11 +158,11 @@ def _cmd_install(args: list[str]) -> int:
             names.append(a)
         i += 1
     if not names:
-        print("usage: tuistore install <name>…  [-y] [--dry-run] [--method <kind>]")
+        print("usage: tuistore install <name>…  [-y] [-f/--force] [--dry-run] [--method <kind>]")
         return 2
     rc = 0
     for n in names:
-        rc |= _install_one(n, yes=yes, dry_run=dry_run, method_kind=method_kind)
+        rc |= _install_one(n, yes=yes, dry_run=dry_run, method_kind=method_kind, force=force)
     return rc
 
 
