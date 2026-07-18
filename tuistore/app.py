@@ -1047,15 +1047,14 @@ class StoreApp(KitApp):
         elif st == "present":
             t.append(f"{icons.CHECK_CIRCLE} installed", style=f"bold {p.green}")
             t.append("  · detected on your PATH", style=p.dim)
-            rec, _ = self._manage_rec(entry)
-            if rec:
+            if self._manage_candidates(entry, "uninstall"):
                 t.append("     ")
                 t.append("u", style=p.blue)
                 t.append(" update  ", style=p.dim)
                 t.append("x", style=p.blue)
                 t.append(" uninstall", style=p.dim)
                 t.append("\n")
-                t.append("  tuistore didn't record this install — manage commands are a best guess",
+                t.append("  tuistore didn't record this — it'll ask which manager you used",
                          style=p.faint)
             t.append("\n\n")
         # author note (Gheat's suite)
@@ -1208,63 +1207,90 @@ class StoreApp(KitApp):
         self.push_screen(ReadmeModal(self.current))
 
     # ── manage installed tools ─────────────────────────────────────────
-    def _manage_rec(self, entry: Entry) -> tuple[dict | None, bool]:
-        """Return (record, guessed). For tools tuistore installed, the exact
-        ledger record. For tools merely detected on PATH, a best-guess record
-        from the best method this machine can run (guessed=True)."""
-        st = self.status_of(entry)
+    def _manage_candidates(self, entry: Entry, action: str) -> list[tuple[str, str]]:
+        """(manager, command) pairs this machine can run to update/uninstall the
+        tool — one per manager, best-ranked first. Used for detected tools where
+        we don't know which manager was used."""
+        out: list[tuple[str, str]] = []
+        seen: set[str] = set()
+        for m in rank(entry.methods, self.env):
+            if m.kind in seen or not m.available(self.env):
+                continue
+            pkg = inst.pkg_from_command(m.kind, m.command)
+            if not pkg:
+                continue
+            rec = {"name": entry.name, "kind": m.kind, "pkg": pkg,
+                   "bin": pkg, "command": m.command}
+            cmd = (inst.uninstall_command if action == "uninstall"
+                   else inst.update_command)(rec)
+            if cmd:
+                seen.add(m.kind)
+                out.append((m.kind, cmd))
+        return out
+
+    def _run_manage(self, entry: Entry, kind: str, cmd: str, action: str,
+                    guessed: bool) -> None:
+        if action == "uninstall":
+            sub = f"removes {entry.name} ({kind})"
+            if guessed:
+                sub += " · guessed — check it's how you installed it"
+            self.push_screen(RunModal(
+                f"{icons.TRASH} uninstall {entry.name}", cmd, subtitle=sub,
+                danger=True, verb="uninstall",
+                on_success=lambda: self._after_uninstall(entry.slug)))
+        else:
+            sub = f"via {kind}" + (" · guessed" if guessed else "")
+            self.push_screen(RunModal(
+                f"{icons.REFRESH} update {entry.name}", cmd, subtitle=sub,
+                verb="update", danger=guessed,
+                on_success=lambda: self._after_manage(entry.slug)))
+
+    def _manage(self, action: str) -> None:
+        e = self.current
+        if not e:
+            return
+        st = self.status_of(e)
         if st == "managed":
-            return self.ledger.get(entry.slug), False
-        if st == "present":
-            m = best(entry.methods, self.env)
-            if not m or not m.available(self.env):
-                return None, False
-            pkg = inst.pkg_from_command(m.kind, m.command) or entry.name.lower()
-            return {"name": entry.name, "kind": m.kind, "command": m.command,
-                    "pkg": pkg, "bin": pkg}, True
-        return None, False
+            rec = self.ledger.get(e.slug, {})
+            cmd = (inst.uninstall_command if action == "uninstall"
+                   else inst.update_command)(rec)
+            if not cmd:
+                self.notify(f"no {action} command for a {rec.get('kind','?')} install",
+                            severity="warning")
+                return
+            self._run_manage(e, rec.get("kind", ""), cmd, action, guessed=False)
+            return
+        if st != "present":
+            self.notify(f"{e.name} isn't installed", severity="warning")
+            return
+        cands = self._manage_candidates(e, action)
+        if not cands:
+            self.notify(f"no {action} command tuistore can run for {e.name}",
+                        severity="warning")
+            return
+        if len(cands) == 1:
+            self._run_manage(e, cands[0][0], cands[0][1], action, guessed=True)
+            return
+        # detected on PATH, several possible managers — ask which one they used
+        opts = []
+        for i, (kind, cmd) in enumerate(cands):
+            row = Text()
+            row.append(f"{kind:<8}", style=palette.text)
+            row.append(cmd, style=palette.dim)
+            opts.append(Option(row, id=str(i)))
+
+        def picked(idx: str | None) -> None:
+            if idx is not None:
+                kind, cmd = cands[int(idx)]
+                self._run_manage(e, kind, cmd, action, guessed=True)
+
+        self.push_screen(PickerModal(f"how did you install {e.name}?", opts), picked)
 
     def action_update(self) -> None:
-        e = self.current
-        if not e:
-            return
-        rec, guessed = self._manage_rec(e)
-        if not rec:
-            self.notify(f"{e.name} isn't installed", severity="warning")
-            return
-        cmd = inst.update_command(rec)
-        if not cmd:
-            self.notify(f"no update command for a {rec.get('kind','?')} install",
-                        severity="warning")
-            return
-        sub = f"via {rec.get('kind','')}"
-        if guessed:
-            sub += " · guessed — tuistore didn't install this"
-        self.push_screen(RunModal(
-            f"{icons.REFRESH} update {e.name}", cmd,
-            subtitle=sub, verb="update", danger=guessed,
-            on_success=lambda: self._after_manage(e.slug)))
+        self._manage("update")
 
     def action_uninstall(self) -> None:
-        e = self.current
-        if not e:
-            return
-        rec, guessed = self._manage_rec(e)
-        if not rec:
-            self.notify(f"{e.name} isn't installed", severity="warning")
-            return
-        cmd = inst.uninstall_command(rec)
-        if not cmd:
-            self.notify(f"no uninstall command for a {rec.get('kind','?')} install",
-                        severity="warning")
-            return
-        sub = f"removes {e.name} ({rec.get('kind','')})"
-        if guessed:
-            sub += " · guessed — tuistore didn't install this, check it's right"
-        self.push_screen(RunModal(
-            f"{icons.TRASH} uninstall {e.name}", cmd,
-            subtitle=sub, danger=True,
-            verb="uninstall", on_success=lambda: self._after_uninstall(e.slug)))
+        self._manage("uninstall")
 
     def _after_manage(self, slug: str) -> None:
         self._reload_installed()

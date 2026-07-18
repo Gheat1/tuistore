@@ -98,7 +98,12 @@ def pkg_from_command(kind: str, command: str) -> str | None:
     cands = [t for t in cands if not t.startswith("http")]
     if not cands:
         return None
-    return cands[0].split("@")[0]
+    pkg = cands[0].split("@")[0]
+    # a tap-qualified brew formula (user/tap/formula) installs with the full
+    # path but updates/uninstalls with the bare formula name.
+    if kind == "brew" and "/" in pkg:
+        pkg = pkg.split("/")[-1]
+    return pkg
 
 
 # ── update / uninstall command derivation ───────────────────────────────────
