@@ -17,7 +17,7 @@ Built on [🍚 ricekit](https://github.com/Gheat1/ricekit) · seeded from
 ![tools](https://img.shields.io/badge/catalog-740+_apps-fab387)
 ![built on](https://img.shields.io/badge/built_on-ricekit-cba6f7)
 
-<img src="assets/gallery.png" alt="tuistore" width="100%">
+<img src="assets/demo.gif" alt="tuistore demo — search, browse, and one-key install" width="100%">
 
 </div>
 
