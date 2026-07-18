@@ -1259,11 +1259,13 @@ class StoreApp(KitApp):
         self.push_screen(ManageModal())
 
     def action_update_self(self) -> None:
+        # force + refresh: a plain upgrade is version-gated and no-ops when the
+        # version string is unchanged; this always pulls the latest commit
+        src = "git+https://github.com/Gheat1/tuistore"
         if self.env.has("uv"):
-            cmd = ("uv tool upgrade tuistore || "
-                   "uv tool install --force git+https://github.com/Gheat1/tuistore")
+            cmd = f"uv tool install --force --refresh {src}"
         elif self.env.has("pipx"):
-            cmd = "pipx upgrade tuistore"
+            cmd = f"pipx install --force {src}"
         else:
             self.notify("need uv or pipx to self-update", severity="warning")
             return

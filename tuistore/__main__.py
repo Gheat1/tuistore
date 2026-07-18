@@ -281,15 +281,19 @@ def _cmd_info(args: list[str]) -> int:
 
 
 # ── existing verbs ──────────────────────────────────────────────────────────
+_SELF_SRC = "git+https://github.com/Gheat1/tuistore"
+
+
 def _update_self() -> int:
+    # force + refresh so it pulls the latest commit even when the version
+    # string hasn't changed (a plain `uv tool upgrade` is version-gated and
+    # no-ops on same-version updates).
     if shutil.which("uv"):
-        if _run("uv tool upgrade tuistore") == 0:
-            return 0
-        return _run("uv tool install --force git+https://github.com/Gheat1/tuistore")
+        return _run(f"uv tool install --force --refresh {_SELF_SRC}")
     if shutil.which("pipx"):
-        return _run("pipx upgrade tuistore")
-    print("couldn't find uv or pipx — reinstall with:\n"
-          "  uv tool install --force git+https://github.com/Gheat1/tuistore")
+        return _run(f"pipx install --force {_SELF_SRC}")
+    print(f"couldn't find uv or pipx — reinstall with:\n"
+          f"  uv tool install --force --refresh {_SELF_SRC}")
     return 1
 
 

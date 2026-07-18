@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tuistore"
-version = "0.1.0"
+version = "0.2.0"
 description = "🛍️  The TUI app store — browse, search, and one-key install hundreds of terminal apps, right from your terminal"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
