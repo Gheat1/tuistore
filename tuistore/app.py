@@ -1,0 +1,854 @@
+"""tuistore — the TUI app store, as a Textual app built on ricekit.
+
+Layout is three panes under a search box: categories · results · detail.
+Everything is cache-first (render the bundled catalog instantly, hydrate live
+GitHub data + scrape installs in background workers) and follows the ricekit
+doctrine — rounded borders, focus-recolor, role-based color, one animation.
+"""
+
+from __future__ import annotations
+
+import webbrowser
+from datetime import datetime, timezone
+
+from rich.text import Text
+from textual import on, work
+from textual.app import ComposeResult
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical
+from textual.screen import ModalScreen
+from textual.widgets import Footer, Input, Static
+from textual.widgets.option_list import Option
+
+from ricekit import KitApp, icons, palette
+from ricekit.modals import HelpModal, PickerModal, ThemeModal  # noqa: F401
+from ricekit.storage import AppDirs
+from ricekit.widgets import KitScroll, NavList, Splitter, pop_in
+
+from . import __version__, github, platform
+from .catalog import Catalog, Entry, load, search
+from .installer import Method, best, rank, run_stream
+
+DIRS = AppDirs("tuistore")
+
+# language → truecolor dot (data color: stays truecolor in every theme)
+LANG_COLOR = {
+    "rust": "#dea584", "go": "#00add8", "python": "#4b8bbe", "c": "#8a929c",
+    "c++": "#f34b7d", "javascript": "#f1e05a", "typescript": "#3178c6",
+    "shell": "#89e051", "ruby": "#701516", "lua": "#5b7ec7", "zig": "#ec915c",
+    "haskell": "#8f6fbf", "nim": "#ffe953", "crystal": "#c8c8c8", "java": "#e07b53",
+    "kotlin": "#a97bff", "vim script": "#199f4b", "vim": "#199f4b", "perl": "#7aa6da",
+    "ocaml": "#ee8809", "elixir": "#9b6dc1", "clojure": "#5881d8", "d": "#c74f4f",
+    "julia": "#a270ba", "swift": "#f05138", "php": "#8892bf", "scala": "#c22d40",
+}
+
+
+def lang_dot(language: str | None) -> Text:
+    if not language:
+        return Text("○ ", style=palette.faint)
+    color = LANG_COLOR.get(language.lower(), palette.dim)
+    return Text("● ", style=color)
+
+
+def star_str(n: int | None) -> str:
+    if n is None:
+        return "—"
+    if n >= 1000:
+        return f"{n / 1000:.1f}k".replace(".0k", "k")
+    return str(n)
+
+
+def rel_time(iso: str | None) -> str:
+    if not iso:
+        return ""
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    s = (datetime.now(timezone.utc) - dt).total_seconds()
+    for cut, div, suf in (
+        (3600, 60, "m"), (86400, 3600, "h"), (604800, 86400, "d"),
+        (2629800, 604800, "w"), (31557600, 2629800, "mo"),
+    ):
+        if s < cut:
+            return f"{int(s // div)}{suf} ago"
+    return f"{int(s // 31557600)}y ago"
+
+
+FEATURED_CAT = "★ Featured"
+ALL_CAT = "All tools"
+
+
+# ── install modal ────────────────────────────────────────────────────────────
+class InstallModal(ModalScreen):
+    """Confirm-then-run installer with streamed output. `a` swaps the method."""
+
+    BINDINGS = [
+        Binding("escape", "close", show=False),
+        Binding("enter", "run", show=False),
+        Binding("a", "alternatives", show=False),
+        Binding("q", "close", show=False),
+    ]
+
+    DEFAULT_CSS = """
+    InstallModal { align: center middle; background: $kit-overlay; }
+    InstallModal #box {
+        width: 84; max-width: 92%; height: auto; max-height: 88%;
+        background: $kit-modal-bg; border: round $kit-border-focus; padding: 1 2;
+    }
+    InstallModal #title { padding: 0 0 1 0; }
+    InstallModal #cmd {
+        height: auto; padding: 1 2; margin: 0 0 1 0;
+        border: round $kit-border; background: $kit-cursor;
+    }
+    InstallModal #meta { padding: 0 0 1 0; }
+    InstallModal #log { height: auto; max-height: 22; display: none; margin: 1 0 0 0; }
+    InstallModal #log.on { display: block; }
+    InstallModal #hint { padding: 1 0 0 0; }
+    """
+
+    def __init__(self, entry: Entry, method: Method, alternatives: list[Method]) -> None:
+        super().__init__()
+        self.entry = entry
+        self.method = method
+        self.alternatives = alternatives
+        self.running = False
+        self.done = False
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="box"):
+            yield Static(id="title")
+            yield Static(id="cmd")
+            yield Static(id="meta")
+            with KitScroll(id="log"):
+                yield Static(id="logtext")
+            yield Static(id="hint")
+
+    def on_mount(self) -> None:
+        pop_in(self.query_one("#box"))
+        self._refresh_view()
+
+    def _refresh_view(self) -> None:
+        e, m = self.entry, self.method
+        title = Text()
+        title.append(f"{icons.PLUG}  install ", style=palette.blue)
+        title.append(e.name, style=f"bold {palette.text}")
+        self.query_one("#title", Static).update(title)
+
+        cmd = Text()
+        cmd.append("$ ", style=palette.dim)
+        cmd.append(m.command, style=palette.text)
+        self.query_one("#cmd", Static).update(cmd)
+
+        env = self.app.env
+        meta = Text()
+        meta.append(f"via {m.label}", style=palette.sub)
+        if m.source == "readme":
+            meta.append("   from README", style=palette.green)
+        elif m.source == "official":
+            meta.append("   official", style=palette.green)
+        else:
+            meta.append(f"   {m.note or 'inferred'}", style=palette.dim)
+        if not m.available(env):
+            meta.append(f"   ⚠ {m.why_unavailable(env)}", style=palette.peach)
+        self.query_one("#meta", Static).update(meta)
+        self._hint()
+
+    def _hint(self) -> None:
+        h = Text()
+        if self.done:
+            h.append("enter", style=palette.blue)
+            h.append(" / ", style=palette.faint)
+            h.append("esc", style=palette.blue)
+            h.append(" close", style=palette.dim)
+        elif self.running:
+            h.append(f"{icons.CLOCK} installing…", style=palette.peach)
+        else:
+            alts = len(self.alternatives)
+            h.append("enter", style=palette.blue)
+            h.append(" run   ", style=palette.dim)
+            if alts:
+                h.append("a", style=palette.blue)
+                h.append(f" method ({alts})   ", style=palette.dim)
+            h.append("esc", style=palette.blue)
+            h.append(" cancel", style=palette.dim)
+        self.query_one("#hint", Static).update(h)
+
+    def action_alternatives(self) -> None:
+        if self.running or self.done or not self.alternatives:
+            return
+        opts = []
+        env = self.app.env
+        for i, m in enumerate([self.method] + self.alternatives):
+            row = Text()
+            row.append("● " if i == 0 else "○ ",
+                       style=palette.blue if m.available(env) else palette.faint)
+            row.append(f"{m.label}  ", style=palette.text if m.available(env) else palette.dim)
+            row.append(m.command, style=palette.dim)
+            if not m.available(env):
+                row.append(f"  ({m.why_unavailable(env)})", style=palette.peach)
+            opts.append(Option(row, id=str(i)))
+
+        def picked(idx: str | None) -> None:
+            if idx is None:
+                return
+            chosen = ([self.method] + self.alternatives)[int(idx)]
+            rest = [m for m in [self.method] + self.alternatives if m is not chosen]
+            self.method, self.alternatives = chosen, rest
+            self._refresh_view()
+
+        self.app.push_screen(PickerModal("choose an install method", opts), picked)
+
+    def action_run(self) -> None:
+        if self.done:
+            self.dismiss(None)
+            return
+        if self.running:
+            return
+        self.running = True
+        self.query_one("#log").add_class("on")
+        self._hint()
+        self._install()
+
+    @work(exclusive=True, group="install")
+    async def _install(self) -> None:
+        logw = self.query_one("#logtext", Static)
+        lines: list[str] = []
+        code = "?"
+
+        def flush() -> None:
+            body = Text()
+            for ln in lines[-400:]:
+                body.append(ln + "\n", style=palette.sub)
+            logw.update(body)
+            log = self.query_one("#log")
+            log.scroll_end(animate=False)
+
+        async for kind, payload in run_stream(self.method.command):
+            if kind == "out":
+                lines.append(payload)
+                if len(lines) % 2 == 0 or len(lines) < 12:
+                    flush()
+            else:
+                code = payload
+        flush()
+
+        self.running = False
+        self.done = True
+        result = Text()
+        if code == "0":
+            result.append(f"{icons.CHECK_CIRCLE}  installed ", style=f"bold {palette.green}")
+            result.append(self.entry.name, style=palette.text)
+            self.app.notify(f"installed {self.entry.name}", severity="information")
+        else:
+            result.append(f"{icons.CROSS_CIRCLE}  exited with code {code}", style=f"bold {palette.red}")
+            self.app.notify(f"{self.entry.name} install failed (code {code})", severity="error")
+        lines.append("")
+        lines.append(result.plain)
+        flush()
+        # append the styled result line properly
+        body = Text()
+        for ln in lines[-400:-2]:
+            body.append(ln + "\n", style=palette.sub)
+        body.append("\n")
+        body.append(result)
+        logw.update(body)
+        self.query_one("#log").scroll_end(animate=False)
+        self._hint()
+
+    def action_close(self) -> None:
+        if self.running:
+            self.app.notify("install still running — let it finish", severity="warning")
+            return
+        self.dismiss(None)
+
+
+# ── features / about screen ──────────────────────────────────────────────────
+class FeaturesModal(ModalScreen):
+    BINDINGS = [
+        Binding("escape", "close", show=False),
+        Binding("q", "close", show=False),
+        Binding("f", "close", show=False),
+    ]
+
+    DEFAULT_CSS = """
+    FeaturesModal { align: center middle; background: $kit-overlay; }
+    FeaturesModal #fbox {
+        width: 76; max-width: 92%; height: auto; max-height: 90%;
+        background: $kit-modal-bg; border: round $kit-border-focus; padding: 1 3;
+    }
+    FeaturesModal #fbody { height: auto; max-height: 34; scrollbar-size-vertical: 1; }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="fbox"):
+            with KitScroll(id="fbody"):
+                yield Static(id="ftext")
+
+    def on_mount(self) -> None:
+        pop_in(self.query_one("#fbox"))
+        p = palette
+        t = Text()
+        t.append("\U0001f6cd️  tuistore", style=f"bold {p.text}")
+        t.append(f"   v{__version__}\n", style=p.dim)
+        t.append("the TUI app store — find and install terminal apps without leaving the terminal\n\n",
+                 style=p.sub)
+
+        def feat(icon: str, head: str, body: str) -> None:
+            t.append(f"  {icon}  ", style=p.blue)
+            t.append(f"{head}\n", style=f"bold {p.text}")
+            t.append(f"      {body}\n\n", style=p.dim)
+
+        feat(icons.SEARCH, "instant fuzzy search",
+             "type anywhere up top — matches names, descriptions and languages, ranked as you go.")
+        feat(icons.LIST, "hundreds of tools, curated",
+             "seeded from awesome-tuis + Gheat's own suite, grouped into browsable categories.")
+        feat(icons.PLUG, "one-key install that fits your box",
+             "detects your OS, distro and package managers, then offers only commands you can run —")
+        t.append("      pacman on Arch, brew on mac, cargo where cargo is, docker where docker is.\n\n",
+                 style=p.dim)
+        feat(icons.STAR, "star from the store",
+             "found something great? press s to star it on GitHub (via your gh login).")
+        feat(icons.PAINTBRUSH, "five ricekit themes",
+             "mocha · void · onyx · clear · system — press t to cycle, ctrl+p to preview any.")
+        feat(icons.REFRESH, "installs scraped from READMEs",
+             "verified commands come straight from each project's README, cached as you browse.")
+
+        t.append("  keys\n", style=f"bold {p.dim}")
+        for k, d in (("/", "search"), ("enter", "open detail"), ("i", "install"),
+                     ("s", "star / unstar"), ("o", "open in browser"),
+                     ("t", "theme"), ("?", "all keys"), ("q", "quit")):
+            t.append(f"    {k.ljust(7)}", style=p.blue)
+            t.append(f"{d}\n", style=p.sub)
+        t.append("\n  built on ", style=p.dim)
+        t.append("ricekit", style=p.mauve)
+        t.append(" · made by ", style=p.dim)
+        t.append("@Gheat1", style=p.lav)
+        t.append("  ·  esc to close", style=p.faint)
+        self.query_one("#ftext", Static).update(t)
+
+    def action_close(self) -> None:
+        self.dismiss(None)
+
+
+# ── the app ──────────────────────────────────────────────────────────────────
+class StoreApp(KitApp):
+    TITLE = "tuistore"
+
+    BINDINGS = [
+        Binding("slash", "focus_search", "search"),
+        Binding("i", "install", "install"),
+        Binding("s", "toggle_star", "star"),
+        Binding("o", "open_browser", "open"),
+        Binding("f", "features", "features"),
+        Binding("t", "cycle_kit_theme", "theme"),
+        Binding("question_mark", "help", "help"),
+        Binding("q", "quit", "quit"),
+        Binding("escape", "back", show=False),
+        Binding("ctrl+r", "rebuild_hint", show=False),
+    ]
+
+    CSS = f"""
+    Screen {{ layers: base; }}
+    #search {{
+        height: 3; margin: 0 1; padding: 0 1;
+        border: round $kit-border; background: transparent;
+        border-title-color: {palette.sub};
+    }}
+    #search:focus {{ border: round $kit-border-focus; }}
+
+    #main {{ height: 1fr; padding: 0 1 0 0; }}
+
+    #sidebar {{
+        width: 25; margin: 0 0 0 1;
+        border: round $kit-border; border-title-color: {palette.sub};
+    }}
+    #sidebar:focus {{ border: round $kit-border-focus; border-title-color: $kit-border-focus; }}
+
+    #results {{
+        width: 1fr;
+        border: round $kit-border;
+        border-title-color: {palette.text}; border-subtitle-color: {palette.dim};
+    }}
+    #results:focus {{ border: round $kit-border-focus; }}
+
+    #detail {{
+        width: 46%; min-width: 40;
+        border: round $kit-border;
+        border-title-color: $kit-border-alt; border-subtitle-color: {palette.dim};
+    }}
+    #detail:focus-within {{ border: round $kit-border-alt; }}
+    #detailscroll {{ height: 1fr; padding: 0 1; scrollbar-size-vertical: 1; }}
+    #d-body {{ height: auto; }}
+
+    OptionList {{
+        background: transparent; border: none; padding: 0 1;
+        scrollbar-size-vertical: 1;
+    }}
+    OptionList:focus {{ background: transparent; border: none; }}
+    OptionList > .option-list--option-highlighted {{ background: $kit-cursor; }}
+    OptionList:focus > .option-list--option-highlighted {{ background: $kit-cursor; }}
+
+    CommandPalette {{ background: $kit-overlay; }}
+    CommandPalette > Vertical {{ width: 70; max-width: 85%; }}
+    CommandPalette #--input {{ background: $kit-modal-bg; }}
+    CommandPalette CommandList {{ background: $kit-modal-bg; }}
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.catalog: Catalog = load()
+        self.env = platform.detect()
+        self.query = ""
+        self.active_category: str | None = None  # None = All
+        self.current: Entry | None = None
+        self._by_slug: dict[str, Entry] = {e.slug: e for e in self.catalog.entries}
+        self._starred: dict[str, bool | None] = {}
+        self._scraped: set[str] = set()
+
+    # ── compose ────────────────────────────────────────────────────────
+    class _Search(Input):
+        BINDINGS = [
+            Binding("down", "to_results", show=False),
+            Binding("escape", "clear_or_back", show=False),
+        ]
+
+        def action_to_results(self) -> None:
+            self.app.query_one("#results").focus()
+
+        def action_clear_or_back(self) -> None:
+            if self.value:
+                self.value = ""
+            else:
+                self.app.query_one("#results").focus()
+
+    def compose(self) -> ComposeResult:
+        yield self._Search(placeholder="search tools…  (name, description, language)", id="search")
+        with Horizontal(id="main"):
+            yield NavList(id="sidebar")
+            yield Splitter("#sidebar", on_resized=self._save_layout)
+            yield NavList(id="results")
+            yield Splitter("#detail", invert=True, on_resized=self._save_layout)
+            with Vertical(id="detail"):
+                with KitScroll(id="detailscroll"):
+                    yield Static(id="d-body")
+        yield Footer()
+
+    def on_mount(self) -> None:
+        state = DIRS.load_state()
+        self.init_kit(theme=state.get("theme"))
+        self.query_one("#search").border_title = f"{icons.SEARCH}  search"
+        self.query_one("#sidebar").border_title = "categories"
+        self._apply_layout(state.get("layout", {}))
+        self._build_sidebar()
+        # default to "All tools" so search up top searches everything; featured
+        # still float to the top of the list on an empty query
+        self.query_one("#sidebar", NavList).highlighted = 1
+        self.active_category = None
+        self.render_results()
+        self.query_one("#search").focus()
+        n = len(self.catalog.entries)
+        self.set_timer(0.1, lambda: self.notify(
+            f"{n} tools ready · {self.env.label} · type to search, ↓ to browse, ? for keys"))
+
+    def on_resize(self, event) -> None:
+        # widths settle after the first layout — re-truncate rows to real width
+        if self.is_mounted:
+            self.render_results(preserve=True)
+
+    def on_kit_theme_changed(self) -> None:
+        # re-render Rich chrome so palette-based colors follow the theme
+        if self.current:
+            self.render_detail(self.current)
+        self.render_results(preserve=True)
+        self._build_sidebar()
+        if not self.kit_theme_previewing:
+            DIRS.save_state({"theme": self.theme})
+
+    # ── layout persistence ─────────────────────────────────────────────
+    def _save_layout(self, target: str, width: int | None) -> None:
+        layout = DIRS.load_state().get("layout", {})
+        if width is None:
+            layout.pop(target, None)
+        else:
+            layout[target] = width
+        DIRS.save_state({"layout": layout})
+
+    def _apply_layout(self, layout: dict) -> None:
+        for target, width in layout.items():
+            try:
+                self.query_one(target).styles.width = width
+            except Exception:
+                pass
+
+    # ── sidebar ────────────────────────────────────────────────────────
+    def _categories(self) -> list[tuple[str, int]]:
+        counts: dict[str, int] = {}
+        for e in self.catalog.entries:
+            counts[e.category] = counts.get(e.category, 0) + 1
+        cats = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+        featured_n = sum(1 for e in self.catalog.entries if e.featured)
+        head = [(FEATURED_CAT, featured_n), (ALL_CAT, len(self.catalog.entries))]
+        return head + cats
+
+    def _build_sidebar(self) -> None:
+        ol = self.query_one("#sidebar", NavList)
+        prev = ol.highlighted
+        ol.clear_options()
+        opts: list[Option] = []
+        for name, count in self._categories():
+            active = (
+                (name == FEATURED_CAT and self.active_category == "__featured__")
+                or (name == ALL_CAT and self.active_category is None)
+                or name == self.active_category
+            )
+            row = Text(no_wrap=True, overflow="ellipsis")
+            if active:
+                row.append("▎ ", style=palette.blue)
+            else:
+                row.append("  ")
+            style = palette.text if active else palette.sub
+            if name == FEATURED_CAT:
+                row.append(name, style=f"bold {palette.peach if not active else palette.text}")
+            else:
+                row.append(name, style=style)
+            row.append(f"  {count}", style=palette.faint)
+            opts.append(Option(row, id=name))
+        ol.add_options(opts)
+        ol.highlighted = prev if prev is not None else 0
+
+    @on(NavList.OptionSelected, "#sidebar")
+    def _sidebar_selected(self, event: NavList.OptionSelected) -> None:
+        name = event.option.id or ALL_CAT
+        if name == ALL_CAT:
+            self.active_category = None
+        elif name == FEATURED_CAT:
+            self.active_category = "__featured__"
+        else:
+            self.active_category = name
+        self._build_sidebar()
+        self.render_results()
+        self.query_one("#results").focus()
+
+    @on(NavList.OptionHighlighted, "#sidebar")
+    def _sidebar_highlighted(self, event: NavList.OptionHighlighted) -> None:
+        # live filter as you arrow through categories
+        name = event.option.id or ALL_CAT
+        if name == ALL_CAT:
+            new = None
+        elif name == FEATURED_CAT:
+            new = "__featured__"
+        else:
+            new = name
+        if new != self.active_category:
+            self.active_category = new
+            self.render_results()
+
+    # ── results ────────────────────────────────────────────────────────
+    def _current_pool(self) -> list[Entry]:
+        if self.active_category == "__featured__":
+            pool = [e for e in self.catalog.entries if e.featured]
+            return search(pool, self.query) if self.query else pool
+        cat = None if self.active_category is None else self.active_category
+        return search(self.catalog.entries, self.query, category=cat)
+
+    def _result_row(self, e: Entry, width: int) -> Option:
+        row = Text(no_wrap=True, overflow="ellipsis")
+        row.append_text(lang_dot(e.language))
+        name_style = f"bold {palette.text}" if e.featured else palette.text
+        row.append(e.name, style=name_style)
+        if e.featured:
+            row.append(" ★", style=palette.peach)
+        if e.archived:
+            row.append(" ⊘", style=palette.faint)
+        pad = max(1, 24 - len(e.name) - (2 if e.featured else 0) - (2 if e.archived else 0))
+        row.append(" " * pad)
+        row.append("★ ", style=palette.dim)  # plain glyph: readable without a nerd font
+        row.append(f"{star_str(e.stars):<6}", style=palette.dim)
+        if e.description:
+            row.append("  ")
+            row.append(e.description, style=palette.dim)
+        # hard-truncate: OptionList doesn't reliably honor Text.no_wrap, and a
+        # wrapped row breaks the one-line-per-tool rhythm and cursor highlight
+        row.truncate(max(24, width - 2), overflow="ellipsis")
+        return Option(row)  # index-addressed; slugs aren't unique across dupes
+
+    def render_results(self, preserve: bool = False) -> None:
+        ol = self.query_one("#results", NavList)
+        prev = ol.highlighted if preserve else None
+        pool = self._current_pool()
+        self._results_pool = pool
+        width = ol.size.width or 60
+        ol.clear_options()
+        if not pool:
+            ol.add_options([Option(Text("  no matches", style=palette.dim), disabled=True)])
+            ol.border_title = "tools"
+            ol.border_subtitle = "0"
+            self.query_one("#d-body", Static).update(
+                Text("\n  nothing here — try another search", style=palette.dim))
+            return
+        ol.add_options([self._result_row(e, width) for e in pool])
+        label = self.active_category or "all tools"
+        if self.active_category == "__featured__":
+            label = "featured"
+        ol.border_title = f"{label}"
+        ol.border_subtitle = f"{len(pool)}"
+        target = prev if (prev is not None and prev < len(pool)) else 0
+        ol.highlighted = target
+
+    @on(NavList.OptionHighlighted, "#results")
+    def _result_highlighted(self, event: NavList.OptionHighlighted) -> None:
+        idx = event.option_index
+        pool = getattr(self, "_results_pool", [])
+        if idx is None or idx >= len(pool):
+            return
+        entry = pool[idx]
+        self.current = entry
+        self.render_detail(entry)
+        self.hydrate(entry.slug)
+
+    @on(NavList.OptionSelected, "#results")
+    def _result_selected(self, event: NavList.OptionSelected) -> None:
+        self.query_one("#detailscroll").focus()
+
+    @on(Input.Changed, "#search")
+    def _search_changed(self, event: Input.Changed) -> None:
+        self.query = event.value
+        self.render_results()
+
+    @on(Input.Submitted, "#search")
+    def _search_submitted(self) -> None:
+        self.query_one("#results").focus()
+
+    # ── detail ─────────────────────────────────────────────────────────
+    def _methods_for(self, entry: Entry) -> list[Method]:
+        return rank(entry.methods, self.env)
+
+    def render_detail(self, entry: Entry) -> None:
+        p = palette
+        t = Text()
+        # title
+        t.append("\n")
+        t.append(entry.name, style=f"bold {p.text}")
+        if entry.featured:
+            t.append("  ★ featured", style=p.peach)
+        if entry.archived:
+            t.append("  ⊘ archived", style=p.faint)
+        t.append("\n")
+        # star + meta line
+        starred = self._starred.get(entry.slug)
+        star_glyph = "★" if starred else "☆"
+        star_col = p.peach if starred else p.dim
+        meta = Text()
+        meta.append(f"{star_glyph} {star_str(entry.stars)}", style=star_col)
+        if entry.language:
+            meta.append("   ")
+            meta.append_text(lang_dot(entry.language))
+            meta.append(entry.language, style=p.sub)
+        if entry.pushed_at:
+            meta.append(f"   {icons.CLOCK} {rel_time(entry.pushed_at)}", style=p.dim)
+        t.append_text(meta)
+        t.append("\n")
+        t.append(entry.slug, style=p.faint)
+        t.append("\n\n")
+        # author note (Gheat's suite)
+        if entry.author_note:
+            t.append(f"{icons.STAR} ", style=p.peach)
+            t.append(entry.author_note, style=p.lav)
+            t.append("\n\n")
+        # description
+        if entry.description:
+            t.append(entry.description, style=p.sub)
+            t.append("\n\n")
+        # install section
+        t.append("install\n", style=f"bold {p.dim}")
+        # one row per manager for readability (the modal still lists every variant)
+        methods, seen_kinds = [], set()
+        for m in self._methods_for(entry):
+            if m.kind in seen_kinds:
+                continue
+            seen_kinds.add(m.kind)
+            methods.append(m)
+        chosen = best(entry.methods, self.env)
+        if not methods:
+            t.append("  no known method yet — ", style=p.dim)
+            t.append("press o to open the README", style=p.blue)
+            t.append("\n")
+        else:
+            for m in methods[:7]:
+                avail = m.available(self.env)
+                is_best = m is chosen or (chosen and m.kind == chosen.kind and m.command == chosen.command)
+                bullet = "▸ " if is_best else "  "
+                t.append(bullet, style=p.blue if is_best else p.faint)
+                t.append(f"{m.label}", style=p.text if avail else p.dim)
+                if m.source in ("readme", "official"):
+                    t.append("  ✓", style=p.green)
+                t.append("\n")
+                t.append("     $ ", style=p.faint)
+                t.append(m.command, style=p.sub if avail else p.faint)
+                if not avail:
+                    t.append(f"   {m.why_unavailable(self.env)}", style=p.peach)
+                t.append("\n")
+            if chosen:
+                t.append("\n")
+                t.append(f"  {icons.PLUG} press ", style=p.dim)
+                t.append("i", style=p.blue)
+                t.append(" to install with the ", style=p.dim)
+                t.append("▸", style=p.blue)
+                t.append(" method\n", style=p.dim)
+        t.append("\n")
+        # hint bar
+        hint = Text()
+        for key, lbl in (("i", "install"), ("s", "star"), ("o", "browser"), ("/", "search")):
+            hint.append(f"{key} ", style=p.blue)
+            hint.append(f"{lbl}   ", style=p.dim)
+        t.append_text(hint)
+
+        self.query_one("#d-body", Static).update(t)
+        dv = self.query_one("#detail")
+        dv.border_title = f"{icons.INFO_CIRCLE} {entry.name}"
+        dv.border_subtitle = entry.category
+
+    @work(exclusive=True, group="hydrate")
+    async def hydrate(self, slug: str) -> None:
+        """Cache-first: refresh live stars, star-state, and scrape installs."""
+        entry = self._by_slug.get(slug)
+        if not entry or not entry.is_github:
+            return
+        owner, repo = entry.repo
+        # star state (cached in memory for the session)
+        if slug not in self._starred:
+            self._starred[slug] = None
+            starred = await github.is_starred(owner, repo)
+            self._starred[slug] = starred
+            if self.current is entry:
+                self.render_detail(entry)
+        # live star count + freshness
+        info = await github.repo_info(owner, repo)
+        if info and self.current is entry:
+            if info.get("stars") is not None:
+                entry.stars = info["stars"]
+            if info.get("pushed_at"):
+                entry.pushed_at = info["pushed_at"]
+            self.render_detail(entry)
+            self.render_results(preserve=True)
+        # lazy README scrape when we don't have verified methods yet
+        has_verified = any(m.source in ("readme", "official") for m in entry.methods)
+        if not has_verified and slug not in self._scraped:
+            self._scraped.add(slug)
+            cached = DIRS.read_cache(f"methods_{owner}_{repo}")
+            if cached and cached.get("methods"):
+                found = [Method.from_dict(m) for m in cached["methods"]]
+            else:
+                from .scrape import scrape_repo
+                found = await scrape_repo(entry.url)
+                DIRS.write_cache(f"methods_{owner}_{repo}",
+                                 {"methods": [m.to_dict() for m in found]})
+            if found:
+                have = {(m.kind, m.command) for m in entry.methods}
+                entry.methods = [m for m in found if (m.kind, m.command) not in have] + entry.methods
+                if self.current is entry:
+                    self.render_detail(entry)
+
+    # ── actions ────────────────────────────────────────────────────────
+    def action_focus_search(self) -> None:
+        s = self.query_one("#search", Input)
+        s.focus()
+
+    def action_back(self) -> None:
+        focused = self.focused
+        if focused and focused.id in ("detailscroll", "detail"):
+            self.query_one("#results").focus()
+        elif focused and focused.id == "results":
+            self.query_one("#sidebar").focus()
+
+    def action_install(self) -> None:
+        if not self.current:
+            return
+        entry = self.current
+        methods = self._methods_for(entry)
+        if not methods:
+            self.notify("no known install method — opening README", severity="warning")
+            self.action_open_browser()
+            return
+        chosen = best(entry.methods, self.env)
+        alternatives = [m for m in methods if m is not chosen]
+        self.push_screen(InstallModal(entry, chosen, alternatives))
+
+    @work(group="star")
+    async def action_toggle_star(self) -> None:
+        if not self.current or not self.current.is_github:
+            self.notify("nothing to star", severity="warning")
+            return
+        if not github.available():
+            self.notify("install & auth the gh CLI to star (gh auth login)", severity="warning")
+            return
+        entry = self.current
+        owner, repo = entry.repo
+        currently = self._starred.get(entry.slug)
+        if currently:
+            ok = await github.unstar(owner, repo)
+            if ok:
+                self._starred[entry.slug] = False
+                if entry.stars:
+                    entry.stars = max(0, entry.stars - 1)
+                self.notify(f"unstarred {entry.name}")
+        else:
+            ok = await github.star(owner, repo)
+            if ok:
+                self._starred[entry.slug] = True
+                entry.stars = (entry.stars or 0) + 1
+                self.notify(f"★ starred {entry.name}")
+        if not ok:
+            self.notify("couldn't reach GitHub via gh", severity="error")
+        if self.current is entry:
+            self.render_detail(entry)
+            self.render_results(preserve=True)
+
+    def action_open_browser(self) -> None:
+        if not self.current:
+            return
+        url = self.current.homepage or self.current.url
+        webbrowser.open(url)
+        self.notify(f"opened {url}")
+
+    def action_features(self) -> None:
+        self.push_screen(FeaturesModal())
+
+    def action_help(self) -> None:
+        self.push_screen(HelpModal(HELP_SECTIONS, title="tuistore — keys"))
+
+    def action_rebuild_hint(self) -> None:
+        self.notify("refresh the catalog offline: uv run python tools/build_catalog.py")
+
+
+HELP_SECTIONS = [
+    ("search & browse", [
+        ("/", "focus the search box"),
+        ("type", "fuzzy-filter by name, description, language"),
+        ("j / k  ↓↑", "move through the list"),
+        ("g / G", "jump to top / bottom"),
+        ("enter", "open a tool's detail / focus it"),
+        ("esc", "step back a pane · clear search"),
+    ]),
+    ("a tool", [
+        ("i", "install (choose method with a)"),
+        ("s", "star / unstar on GitHub"),
+        ("o", "open repo / homepage in browser"),
+    ]),
+    ("app", [
+        ("f", "features / about"),
+        ("t", "cycle theme"),
+        ("ctrl+p", "command palette · preview any theme"),
+        ("?", "this help"),
+        ("q", "quit"),
+    ]),
+]
+
+
+def main() -> None:
+    StoreApp().run()
+
+
+if __name__ == "__main__":
+    main()

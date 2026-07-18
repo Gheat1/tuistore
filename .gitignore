@@ -1,0 +1,21 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# envs
+.venv/
+venv/
+.env
+
+# tooling
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+uv.lock
+
+# os
+.DS_Store
