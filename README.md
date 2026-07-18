@@ -115,15 +115,19 @@ This is the hard part, and it's the point of tuistore.
 
 tuistore isn't just a browser — it's a package manager for the tools it installs.
 
-- It **remembers what it installed** (which manager, which command), and also
-  **detects** tools already on your `PATH`. The **◆ Installed** filter in the
-  sidebar shows everything you have.
-- On any tool tuistore installed, **`u` updates** it and **`x` uninstalls** it —
-  in place, with the right command for the manager it used (`brew upgrade …`,
-  `cargo uninstall …`, `uv tool upgrade …`, and so on), streamed live.
-- **`,` opens the manage menu**: *update tuistore itself*, *refetch the catalog*
-  (pull the newest tool list without reinstalling), or *update everything you've
-  installed* in one go.
+- It **remembers what it installed** (which manager, which command) and also
+  **detects** what you already have — not just by binary on your `PATH`, but by
+  asking **brew, uv, npm, cargo, pipx** what they've installed (so `ripgrep`→`rg`,
+  `bottom`→`btm`, `git-delta`→`delta` all show up). The **◆ Installed** filter
+  lists everything you've got.
+- On any installed tool, **`u` updates** it and **`x` uninstalls** it in place,
+  with the right command for the manager (`brew upgrade …`, `uv tool upgrade …`,
+  `cargo uninstall …`), streamed live. For a tool tuistore didn't install, it
+  asks which manager you used.
+- **`,` opens the manage menu** with **update everything** — a one-shot
+  `brew upgrade` + `uv tool upgrade --all` + `npm update -g` … that upgrades
+  **all** your packages, including ones installed outside tuistore — plus update
+  tuistore itself, refetch the catalog, and clear cache.
 
 <div align="center">
 <img src="assets/installed.png" alt="the Installed filter, with update / uninstall on a managed tool" width="90%">
@@ -143,8 +147,9 @@ tuistore search git          # search the catalog
 tuistore info btop++         # details + every install method
 
 tuistore installed           # list what tuistore installed
+tuistore upgrade             # update EVERYTHING (brew, uv, npm… all packages)
 tuistore update              # update tuistore itself
-tuistore update installed    # update every tool tuistore installed
+tuistore update installed    # update only what tuistore installed
 tuistore refetch catalog     # pull the latest catalog
 tuistore --doctor            # what your machine looks like to the install engine
 ```

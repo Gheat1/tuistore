@@ -9,8 +9,10 @@
     tuistore info    <name>        show a tool's details + install methods
 
     tuistore installed             list what tuistore installed
+    tuistore upgrade               update EVERYTHING (brew, uv, npm, … — all
+                                   packages, incl. ones installed outside)
     tuistore update                update tuistore itself
-    tuistore update installed      update every tool tuistore installed
+    tuistore update installed      update only what tuistore installed
     tuistore refetch catalog       pull the latest catalog
 
     tuistore --doctor              what your machine looks like to the engine
@@ -297,6 +299,18 @@ def _update_self() -> int:
     return 1
 
 
+def _system_upgrade() -> int:
+    from .installed import system_upgrade_command, upgrade_managers
+    from .platform import detect
+    env = detect()
+    cmd = system_upgrade_command(env, allow_sudo=True)
+    if not cmd:
+        print("no package managers found to upgrade.")
+        return 0
+    print("upgrading everything via:", ", ".join(upgrade_managers(env, allow_sudo=True)))
+    return _run(cmd)
+
+
 def _update_installed() -> int:
     from .installed import load_ledger, update_command
     ledger = load_ledger()
@@ -364,11 +378,14 @@ def main() -> None:
     elif a0 in ("info", "show"):
         sys.exit(_cmd_info(rest))
     elif a0 in ("update", "upgrade"):
-        if a1 in ("installed", "all", "tools"):
+        if a1 in ("installed", "tools"):
             sys.exit(_update_installed())
+        if a1 in ("everything", "system", "all"):
+            sys.exit(_system_upgrade())
         if a1 and not a1.startswith("-"):
             sys.exit(_update_named(rest[0]))
-        sys.exit(_update_installed() if a0 == "upgrade" else _update_self())
+        # bare `upgrade` = everything on the machine; bare `update` = tuistore
+        sys.exit(_system_upgrade() if a0 == "upgrade" else _update_self())
     elif a0 in ("update-installed", "update_installed"):
         sys.exit(_update_installed())
     elif a0 in ("refetch", "refresh", "catalog", "refetch-catalog"):

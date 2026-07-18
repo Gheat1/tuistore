@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -211,12 +212,119 @@ def candidate_bins(name: str, methods: list[Method]) -> set[str]:
 
 
 def status(slug: str, name: str, methods: list[Method], ledger: dict,
-           bins: frozenset[str] | None = None) -> str | None:
-    """"managed" (installed by tuistore), "present" (on PATH), or None."""
+           bins: frozenset[str] | None = None,
+           pkgs: dict[str, set[str]] | None = None) -> str | None:
+    """"managed" (installed by tuistore), "present" (on PATH or in a package
+    manager's installed list), or None."""
     if slug in ledger:
         return "managed"
     if bins is None:
         bins = path_binaries()
     if any(c in bins for c in candidate_bins(name, methods)):
         return "present"
+    # manager-aware: a tool whose binary name differs from its package name
+    # (bottom->btm, ripgrep->rg, git-delta->delta) still shows as installed
+    if pkgs:
+        for m in methods:
+            installed = pkgs.get(m.kind)
+            if installed:
+                pkg = pkg_from_command(m.kind, m.command)
+                if pkg and pkg.lower() in installed:
+                    return "present"
     return None
+
+
+# ── what each package manager reports as installed ───────────────────────────
+def _run(cmd: list[str], timeout: float = 25.0) -> str:
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return r.stdout if r.returncode == 0 else ""
+    except Exception:
+        return ""
+
+
+def _brew_installed() -> set[str]:
+    out = _run(["brew", "list", "--formula", "-1"])
+    out += "\n" + _run(["brew", "list", "--cask", "-1"])
+    return {ln.strip().lower() for ln in out.splitlines() if ln.strip()}
+
+
+def _uv_installed() -> set[str]:
+    names = set()
+    for ln in _run(["uv", "tool", "list"]).splitlines():
+        ln = ln.strip()
+        if ln and not ln.startswith("-"):
+            names.add(ln.split()[0].lower())
+    return names
+
+
+def _pipx_installed() -> set[str]:
+    return {ln.split()[0].lower() for ln in _run(["pipx", "list", "--short"]).splitlines()
+            if ln.strip()}
+
+
+def _npm_installed() -> set[str]:
+    names = set()
+    for ln in _run(["npm", "ls", "-g", "--depth=0", "--parseable"]).splitlines():
+        if "/node_modules/" in ln:
+            names.add(ln.rsplit("/node_modules/", 1)[-1].lower())
+    return names
+
+
+def _cargo_installed() -> set[str]:
+    names = set()
+    for ln in _run(["cargo", "install", "--list"]).splitlines():
+        if ln and not ln.startswith(" "):
+            names.add(ln.split()[0].lower())  # "name vX.Y.Z:"
+    return names
+
+
+def scan_installed(env) -> dict[str, set[str]]:
+    """Ask each present package manager what it has installed. Slow-ish
+    (subprocess per manager) — call from a background worker."""
+    out: dict[str, set[str]] = {}
+    if "brew" in env.tools:
+        out["brew"] = _brew_installed()
+    if "uv" in env.tools:
+        out["uv"] = _uv_installed()
+    if "pipx" in env.tools:
+        out["pipx"] = _pipx_installed()
+    if "npm" in env.tools:
+        out["npm"] = _npm_installed()
+    if env.has("cargo"):
+        out["cargo"] = _cargo_installed()
+    return out
+
+
+# ── update everything on the machine ─────────────────────────────────────────
+# (tool, bulk-upgrade command, needs_sudo)
+_BULK_UPGRADE = [
+    ("brew", "brew update && brew upgrade", False),
+    ("uv", "uv tool upgrade --all", False),
+    ("pipx", "pipx upgrade-all", False),
+    ("npm", "npm update -g", False),
+    ("pnpm", "pnpm update -g", False),
+    ("gem", "gem update", False),
+    ("flatpak", "flatpak update -y", False),
+    ("nix", "nix profile upgrade --all", False),
+    ("snap", "sudo snap refresh", True),
+    ("pacman", "sudo pacman -Syu --noconfirm", True),
+    ("apt", "sudo apt update && sudo apt upgrade -y", True),
+    ("dnf", "sudo dnf upgrade -y", True),
+    ("zypper", "sudo zypper update -y", True),
+]
+
+
+def system_upgrade_command(env, allow_sudo: bool = True) -> str:
+    """A shell script that upgrades every package manager on the machine —
+    including things installed outside tuistore. `allow_sudo=False` drops the
+    sudo-requiring managers (they'd hang with no TTY for the password)."""
+    parts = []
+    for tool, cmd, needs_sudo in _BULK_UPGRADE:
+        if tool in env.tools and (allow_sudo or not needs_sudo):
+            parts.append(f'echo "\\n== {tool} =="; {cmd}')
+    return "\n".join(parts)
+
+
+def upgrade_managers(env, allow_sudo: bool = True) -> list[str]:
+    return [t for t, _c, s in _BULK_UPGRADE if t in env.tools and (allow_sudo or not s)]

@@ -643,12 +643,15 @@ class ManageModal(ModalScreen):
         self.query_one("#mhead", Static).update(
             Text(f"{icons.GEAR}  manage", style=f"bold {p.sub}"))
         n = len(self.app.ledger)
+        mgrs = inst.upgrade_managers(self.app.env, allow_sudo=False)
         ol = self.query_one("#mlist", NavList)
         ol.add_options([
-            self._opt("self", f"{icons.REFRESH} update tuistore", f"v{__version__} → latest"),
+            self._opt("everything", f"{icons.REFRESH} update everything",
+                      " · ".join(mgrs) if mgrs else "no package managers found"),
+            self._opt("installed", f"{icons.PLUG} update tuistore-installed", f"{n} tool(s)"),
+            self._opt("self", f"{icons.LEVEL_UP} update tuistore", f"v{__version__} → latest"),
             self._opt("catalog", f"{icons.LIST} refetch catalog",
                       f"{len(cat.entries)} tools · {(cat.generated_at or '')[:10]}"),
-            self._opt("installed", f"{icons.PLUG} update all installed", f"{n} tool(s)"),
             self._opt("cache", f"{icons.TRASH} clear cache", "scraped readmes & installs"),
         ])
         ol.highlighted = 0
@@ -661,7 +664,9 @@ class ManageModal(ModalScreen):
         oid = event.option.id or ""
         app = self.app
         self.dismiss(None)
-        if oid == "self":
+        if oid == "everything":
+            app.action_update_everything()
+        elif oid == "self":
             app.action_update_self()
         elif oid == "catalog":
             app.refetch_catalog()
@@ -754,16 +759,32 @@ class StoreApp(KitApp):
         self._scraped: set[str] = set()
         self.ledger: dict = inst.load_ledger()
         self._bins = inst.path_binaries()
+        self._pkgs: dict[str, set[str]] = {}  # manager -> installed package names
 
     # ── installed status ───────────────────────────────────────────────
     def status_of(self, entry: Entry) -> str | None:
-        """"managed" (installed via tuistore), "present" (on PATH), or None."""
-        return inst.status(entry.slug, entry.name, entry.methods, self.ledger, self._bins)
+        """"managed" (via tuistore), "present" (on PATH or in a package
+        manager's installed list), or None."""
+        return inst.status(entry.slug, entry.name, entry.methods, self.ledger,
+                           self._bins, self._pkgs)
+
+    @work(exclusive=True, group="scan", thread=True)
+    def scan_managers(self) -> None:
+        """Ask brew/uv/npm/cargo/pipx what they have installed (in a thread —
+        the subprocess calls are slow), then refresh the current tool's markers.
+        Deliberately does NOT rebuild the results list or sidebar here (that can
+        yank a scroll to the top); the Installed count/markers refresh on the
+        next interaction."""
+        pkgs = inst.scan_installed(self.env)
+        self._pkgs = pkgs
+        if self.current is not None:
+            self.call_from_thread(self.render_detail, self.current)
 
     def _reload_installed(self) -> None:
         self.ledger = inst.load_ledger()
         inst.refresh_path()
         self._bins = inst.path_binaries()
+        self.scan_managers()
 
     def on_installed(self, entry: Entry, method: Method) -> None:
         """Called by the install modal on success — record it, refresh state."""
@@ -815,6 +836,7 @@ class StoreApp(KitApp):
         self.active_category = None
         self.render_results()
         self.query_one("#search").focus()
+        self.scan_managers()  # background: which brew/uv/npm/… packages are installed
         n = len(self.catalog.entries)
         self.set_timer(0.1, lambda: self.notify(
             f"{n} tools ready · {self.env.label} · type to search, ↓ to browse, ? for keys"))
@@ -863,6 +885,7 @@ class StoreApp(KitApp):
 
     def _build_sidebar(self) -> None:
         ol = self.query_one("#sidebar", NavList)
+        self._building_sidebar = True  # suppress the highlight-restore cascade
         prev = ol.highlighted
         ol.clear_options()
         opts: list[Option] = []
@@ -889,6 +912,7 @@ class StoreApp(KitApp):
             opts.append(Option(row, id=name))
         ol.add_options(opts)
         ol.highlighted = prev if prev is not None else 0
+        self._building_sidebar = False
 
     def _category_key(self, name: str) -> str | None:
         if name == ALL_CAT:
@@ -910,7 +934,10 @@ class StoreApp(KitApp):
 
     @on(NavList.OptionHighlighted, "#sidebar")
     def _sidebar_highlighted(self, event: NavList.OptionHighlighted) -> None:
-        # live filter as you arrow through categories
+        # ignore the highlight-restore fired by a programmatic rebuild — only
+        # react to the user actually arrowing through categories
+        if getattr(self, "_building_sidebar", False):
+            return
         new = self._category_key(event.option.id or ALL_CAT)
         if new != self.active_category:
             self.active_category = new
@@ -1349,9 +1376,23 @@ class StoreApp(KitApp):
             self.notify("nothing installed via tuistore to update", severity="warning")
             return
         self.push_screen(RunModal(
-            f"{icons.PLUG} update all installed", "\n".join(parts),
+            f"{icons.PLUG} update tuistore-installed", "\n".join(parts),
             subtitle=f"{len(parts)} tool(s)", verb="update all",
             on_success=self._reload_installed))
+
+    def action_update_everything(self) -> None:
+        # sudo-requiring managers are skipped in-app (no TTY for the password);
+        # `tuistore upgrade` from the shell runs those too.
+        cmd = inst.system_upgrade_command(self.env, allow_sudo=False)
+        mgrs = inst.upgrade_managers(self.env, allow_sudo=False)
+        if not cmd:
+            self.notify("no package managers found to upgrade", severity="warning")
+            return
+        self.push_screen(RunModal(
+            f"{icons.REFRESH} update everything", cmd,
+            subtitle=f"upgrades all packages via {', '.join(mgrs)} — "
+                     f"including ones installed outside tuistore",
+            verb="update all", on_success=self._reload_installed))
 
     @work(exclusive=True, group="catalog")
     async def refetch_catalog(self) -> None:
