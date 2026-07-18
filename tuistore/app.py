@@ -902,6 +902,8 @@ class StoreApp(KitApp):
     @on(NavList.OptionSelected, "#sidebar")
     def _sidebar_selected(self, event: NavList.OptionSelected) -> None:
         self.active_category = self._category_key(event.option.id or ALL_CAT)
+        if self.active_category == "__installed__":
+            self._reload_installed()  # reflect anything installed since launch
         self._build_sidebar()
         self.render_results()
         self.query_one("#results").focus()
@@ -1187,6 +1189,7 @@ class StoreApp(KitApp):
     def action_install(self) -> None:
         if not self.current:
             return
+        self._reload_installed()  # fresh view of what's already on the machine
         entry = self.current
         methods = self._methods_for(entry)
         if not methods:
@@ -1226,6 +1229,13 @@ class StoreApp(KitApp):
             if cmd:
                 seen.add(m.kind)
                 out.append((m.kind, cmd))
+        # universal last-resort: delete the detected binary — works no matter
+        # how it was installed (a script, a package name we don't carry, etc.)
+        if action == "uninstall":
+            binn = next((c for c in inst.candidate_bins(entry.name, entry.methods)
+                         if c in self._bins), None)
+            if binn:
+                out.append(("binary", f'rm -f "$(command -v {binn})"'))
         return out
 
     def _run_manage(self, entry: Entry, kind: str, cmd: str, action: str,
@@ -1249,6 +1259,7 @@ class StoreApp(KitApp):
         e = self.current
         if not e:
             return
+        self._reload_installed()  # pick up installs done in another session / the CLI
         st = self.status_of(e)
         if st == "managed":
             rec = self.ledger.get(e.slug, {})

@@ -112,7 +112,7 @@ _UNINSTALL = {
     "cargo-binstall": "cargo uninstall {pkg}",
     "uv": "uv tool uninstall {pkg}",
     "pipx": "pipx uninstall {pkg}",
-    "pip": "pip uninstall -y {pkg}",
+    "pip": "python3 -m pip uninstall -y {pkg}",  # portable: many boxes have pip3, not pip
     "brew": "brew uninstall {pkg}",
     "npm": "npm uninstall -g {pkg}",
     "pnpm": "pnpm remove -g {pkg}",
@@ -138,7 +138,7 @@ _UPDATE = {
     "cargo-binstall": "cargo binstall {pkg} --force",
     "uv": "uv tool upgrade {pkg}",
     "pipx": "pipx upgrade {pkg}",
-    "pip": "pip install -U {pkg}",
+    "pip": "python3 -m pip install -U {pkg}",
     "brew": "brew upgrade {pkg}",
     "npm": "npm install -g {pkg}@latest",
     "pnpm": "pnpm add -g {pkg}@latest",
@@ -195,7 +195,10 @@ def path_binaries() -> frozenset[str]:
 
 
 def refresh_path() -> None:
-    path_binaries.cache_clear()
+    try:
+        path_binaries.cache_clear()
+    except AttributeError:
+        pass  # path_binaries was replaced (e.g. in tests) — nothing to clear
 
 
 def candidate_bins(name: str, methods: list[Method]) -> set[str]:
