@@ -66,13 +66,6 @@ FEATURED = [
         methods=[("uv", "uv tool install git+https://github.com/Gheat1/NaviTui", "official")],
     ),
     dict(
-        name="opentab", url="https://github.com/Gheat1/opentab",
-        category="Development", language="Python",
-        description="Browse your AI coding spend in the terminal — OpenCode, Claude Code, Codex & more.",
-        author_note="by Gheat · where did all those tokens go?",
-        methods=[("uv", "uv tool install git+https://github.com/Gheat1/opentab", "official")],
-    ),
-    dict(
         name="ricekit", url="https://github.com/Gheat1/ricekit",
         category="Development", language="Python",
         description="🍚 A developer's TUI suite for Textual — themes, widgets, modals, icons, and the design system behind ltui. This store is built on it.",
