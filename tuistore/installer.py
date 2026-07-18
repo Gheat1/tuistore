@@ -75,6 +75,24 @@ class Method:
     def label(self) -> str:
         return KINDS.get(self.kind, {}).get("label", self.kind)
 
+    @property
+    def trust(self) -> str:
+        """How much to trust this command:
+        - "verified"   maintainer-curated (featured tools)
+        - "community"  taken verbatim from the project's own README
+        - "unverified" guessed from the repo (name may be wrong / squattable)
+        """
+        if self.source == "official":
+            return "verified"
+        if self.source == "readme":
+            return "community"
+        return "unverified"
+
+    @property
+    def is_script(self) -> bool:
+        """A remote install script (curl|sh) — highest-risk, always warn."""
+        return self.kind == "script"
+
     def available(self, env: Env) -> bool:
         if self.os and env.os not in self.os:
             return False

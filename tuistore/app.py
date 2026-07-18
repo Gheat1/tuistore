@@ -17,7 +17,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Footer, Input, Static
+from textual.widgets import Footer, Input, Markdown, Static
 from textual.widgets.option_list import Option
 
 from ricekit import KitApp, icons, palette
@@ -87,6 +87,7 @@ class InstallModal(ModalScreen):
         Binding("escape", "close", show=False),
         Binding("enter", "run", show=False),
         Binding("a", "alternatives", show=False),
+        Binding("r", "readme", show=False),
         Binding("q", "close", show=False),
     ]
 
@@ -101,6 +102,8 @@ class InstallModal(ModalScreen):
         height: auto; padding: 1 2; margin: 0 0 1 0;
         border: round $kit-border; background: $kit-cursor;
     }
+    InstallModal #trust { height: auto; padding: 0 1; margin: 0 0 1 0; }
+    InstallModal #trust.warn { border-left: thick $kit-border-alt; }
     InstallModal #meta { padding: 0 0 1 0; }
     InstallModal #log { height: auto; max-height: 22; display: none; margin: 1 0 0 0; }
     InstallModal #log.on { display: block; }
@@ -119,6 +122,7 @@ class InstallModal(ModalScreen):
         with Vertical(id="box"):
             yield Static(id="title")
             yield Static(id="cmd")
+            yield Static(id="trust")
             yield Static(id="meta")
             with KitScroll(id="log"):
                 yield Static(id="logtext")
@@ -140,17 +144,40 @@ class InstallModal(ModalScreen):
         cmd.append(m.command, style=palette.text)
         self.query_one("#cmd", Static).update(cmd)
 
-        env = self.app.env
+        env, p = self.app.env, palette
+        # trust banner — the security gate: verified vs from-README vs guessed
+        trust_w = self.query_one("#trust", Static)
+        tb = Text()
+        warn = False
+        if m.is_script:
+            warn = True
+            tb.append("⚠  ", style=f"bold {p.peach}")
+            tb.append("this runs a remote install script — ", style=p.peach)
+            tb.append("read it before you run it", style=f"bold {p.peach}")
+        elif m.trust == "unverified":
+            warn = True
+            tb.append("⚠  ", style=f"bold {p.peach}")
+            tb.append("unverified — guessed from the repo; ", style=p.peach)
+            tb.append("confirm it's the right package", style=f"bold {p.peach}")
+        elif m.trust == "community":
+            tb.append(f"{icons.CHECK_CIRCLE}  ", style=p.green)
+            tb.append("from the project's own README", style=p.green)
+        else:  # verified
+            tb.append(f"{icons.CHECK_CIRCLE}  ", style=p.green)
+            tb.append("verified — maintainer-checked", style=p.green)
+        trust_w.update(tb)
+        trust_w.set_class(warn, "warn")
+
         meta = Text()
-        meta.append(f"via {m.label}", style=palette.sub)
-        if m.source == "readme":
-            meta.append("   from README", style=palette.green)
-        elif m.source == "official":
-            meta.append("   official", style=palette.green)
-        else:
-            meta.append(f"   {m.note or 'inferred'}", style=palette.dim)
+        meta.append(f"via {m.label}", style=p.sub)
+        if m.note and m.trust != "verified":
+            meta.append(f"   {m.note}", style=p.dim)
         if not m.available(env):
-            meta.append(f"   ⚠ {m.why_unavailable(env)}", style=palette.peach)
+            meta.append(f"   ⚠ {m.why_unavailable(env)}", style=p.peach)
+        if self.entry.is_github:
+            meta.append("      ")
+            meta.append("r", style=p.blue)
+            meta.append(" read the README first", style=p.dim)
         self.query_one("#meta", Static).update(meta)
         self._hint()
 
@@ -170,9 +197,17 @@ class InstallModal(ModalScreen):
             if alts:
                 h.append("a", style=palette.blue)
                 h.append(f" method ({alts})   ", style=palette.dim)
+            h.append("r", style=palette.blue)
+            h.append(" readme   ", style=palette.dim)
             h.append("esc", style=palette.blue)
             h.append(" cancel", style=palette.dim)
         self.query_one("#hint", Static).update(h)
+
+    def action_readme(self) -> None:
+        if self.entry.is_github:
+            self.app.push_screen(ReadmeModal(self.entry))
+        else:
+            self.app.notify("no GitHub README for this tool", severity="warning")
 
     def action_alternatives(self) -> None:
         if self.running or self.done or not self.alternatives:
@@ -311,12 +346,16 @@ class FeaturesModal(ModalScreen):
              "found something great? press s to star it on GitHub (via your gh login).")
         feat(icons.PAINTBRUSH, "five ricekit themes",
              "mocha · void · onyx · clear · system — press t to cycle, ctrl+p to preview any.")
-        feat(icons.REFRESH, "installs scraped from READMEs",
-             "verified commands come straight from each project's README, cached as you browse.")
+        feat(icons.CHECK_CIRCLE, "verified vs unverified installs",
+             "official + README-sourced commands are marked ✓; guessed ones are flagged ⚠, and")
+        t.append("      remote install scripts get a clear warning — you always confirm before it runs.\n\n",
+                 style=p.dim)
+        feat(icons.LIST, "read the README in-app",
+             "press r on any tool to read its README right here and inspect it before installing.")
 
         t.append("  keys\n", style=f"bold {p.dim}")
         for k, d in (("/", "search"), ("enter", "open detail"), ("i", "install"),
-                     ("s", "star / unstar"), ("o", "open in browser"),
+                     ("r", "read README"), ("s", "star / unstar"), ("o", "open in browser"),
                      ("t", "theme"), ("?", "all keys"), ("q", "quit")):
             t.append(f"    {k.ljust(7)}", style=p.blue)
             t.append(f"{d}\n", style=p.sub)
@@ -331,6 +370,85 @@ class FeaturesModal(ModalScreen):
         self.dismiss(None)
 
 
+# ── readme reader ────────────────────────────────────────────────────────────
+class ReadmeModal(ModalScreen):
+    """Read a tool's README right in the store — inspect it before installing."""
+
+    BINDINGS = [
+        Binding("escape", "close", show=False),
+        Binding("q", "close", show=False),
+        Binding("r", "close", show=False),
+        Binding("o", "browser", show=False),
+    ]
+
+    DEFAULT_CSS = """
+    ReadmeModal { align: center middle; background: $kit-overlay; }
+    ReadmeModal #rbox {
+        width: 92; max-width: 94%; height: 90%;
+        background: $kit-modal-bg; border: round $kit-border-focus; padding: 1 2;
+    }
+    ReadmeModal #rtitle { height: auto; padding: 0 0 1 0; }
+    ReadmeModal #rscroll { height: 1fr; scrollbar-size-vertical: 1; }
+    ReadmeModal #rmd, ReadmeModal Markdown { background: transparent; }
+    ReadmeModal #rhint { height: auto; padding: 1 0 0 0; }
+    """
+
+    def __init__(self, entry: Entry) -> None:
+        super().__init__()
+        self.entry = entry
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="rbox"):
+            yield Static(id="rtitle")
+            with KitScroll(id="rscroll"):
+                yield Markdown("", id="rmd")
+            yield Static(id="rhint")
+
+    def on_mount(self) -> None:
+        p = palette
+        pop_in(self.query_one("#rbox"))
+        title = Text()
+        title.append(f"{icons.LIST}  ", style=p.blue)
+        title.append(self.entry.name, style=f"bold {p.text}")
+        title.append(f"   {self.entry.slug}", style=p.faint)
+        self.query_one("#rtitle", Static).update(title)
+        self.query_one("#rhint", Static).update(
+            Text("loading README…", style=p.dim))
+        self.query_one("#rscroll").focus()
+        self._load()
+
+    @work(exclusive=True, group="readme")
+    async def _load(self) -> None:
+        p = palette
+        e = self.entry
+        owner, repo = e.repo
+        cached = DIRS.read_cache(f"readme_{owner}_{repo}")
+        text = cached.get("text") if cached else None
+        if text is None:
+            from .scrape import fetch_readme
+            text = await fetch_readme(owner, repo)
+            if text:
+                DIRS.write_cache(f"readme_{owner}_{repo}", {"text": text})
+        md = self.query_one("#rmd", Markdown)
+        if not text:
+            await md.update(
+                f"# {e.name}\n\n_Couldn't load a README for this tool._\n\n"
+                "Press **o** to open it in your browser.")
+        else:
+            if len(text) > 60000:  # keep Markdown parsing snappy on huge docs
+                text = text[:60000] + "\n\n---\n_… truncated — press **o** to read the rest on GitHub._"
+            await md.update(text)
+        self.query_one("#rhint", Static).update(
+            Text("j/k scroll · o open in browser · esc close", style=p.dim))
+
+    def action_browser(self) -> None:
+        webbrowser.open(self.entry.homepage or self.entry.url)
+        self.app.notify(f"opened {self.entry.url}")
+
+    def action_close(self) -> None:
+        self.dismiss(None)
+
+
 # ── the app ──────────────────────────────────────────────────────────────────
 class StoreApp(KitApp):
     TITLE = "tuistore"
@@ -338,6 +456,7 @@ class StoreApp(KitApp):
     BINDINGS = [
         Binding("slash", "focus_search", "search"),
         Binding("i", "install", "install"),
+        Binding("r", "read_readme", "readme"),
         Binding("s", "toggle_star", "star"),
         Binding("o", "open_browser", "open"),
         Binding("f", "features", "features"),
@@ -672,7 +791,7 @@ class StoreApp(KitApp):
         chosen = best(entry.methods, self.env)
         if not methods:
             t.append("  no known method yet — ", style=p.dim)
-            t.append("press o to open the README", style=p.blue)
+            t.append("press r to read the README", style=p.blue)
             t.append("\n")
         else:
             for m in methods[:7]:
@@ -681,8 +800,12 @@ class StoreApp(KitApp):
                 bullet = "▸ " if is_best else "  "
                 t.append(bullet, style=p.blue if is_best else p.faint)
                 t.append(f"{m.label}", style=p.text if avail else p.dim)
-                if m.source in ("readme", "official"):
-                    t.append("  ✓", style=p.green)
+                if m.trust == "verified":
+                    t.append("  ✓ verified", style=p.green)
+                elif m.trust == "community":
+                    t.append("  ✓ readme", style=p.green)
+                else:
+                    t.append("  ⚠ unverified", style=p.peach)
                 t.append("\n")
                 t.append("     $ ", style=p.faint)
                 t.append(m.command, style=p.sub if avail else p.faint)
@@ -699,7 +822,8 @@ class StoreApp(KitApp):
         t.append("\n")
         # hint bar
         hint = Text()
-        for key, lbl in (("i", "install"), ("s", "star"), ("o", "browser"), ("/", "search")):
+        for key, lbl in (("i", "install"), ("r", "readme"), ("s", "star"),
+                         ("o", "browser"), ("/", "search")):
             hint.append(f"{key} ", style=p.blue)
             hint.append(f"{lbl}   ", style=p.dim)
         t.append_text(hint)
@@ -768,12 +892,21 @@ class StoreApp(KitApp):
         entry = self.current
         methods = self._methods_for(entry)
         if not methods:
-            self.notify("no known install method — opening README", severity="warning")
-            self.action_open_browser()
+            self.notify("no known install method — opening the README", severity="warning")
+            self.action_read_readme()
             return
         chosen = best(entry.methods, self.env)
         alternatives = [m for m in methods if m is not chosen]
         self.push_screen(InstallModal(entry, chosen, alternatives))
+
+    def action_read_readme(self) -> None:
+        if not self.current:
+            return
+        if not self.current.is_github:
+            self.notify("no GitHub README — opening in browser", severity="warning")
+            self.action_open_browser()
+            return
+        self.push_screen(ReadmeModal(self.current))
 
     @work(group="star")
     async def action_toggle_star(self) -> None:
@@ -832,7 +965,8 @@ HELP_SECTIONS = [
         ("esc", "step back a pane · clear search"),
     ]),
     ("a tool", [
-        ("i", "install (choose method with a)"),
+        ("i", "install (verified vs unverified; pick method with a)"),
+        ("r", "read the README in-app (inspect before installing)"),
         ("s", "star / unstar on GitHub"),
         ("o", "open repo / homepage in browser"),
     ]),

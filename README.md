@@ -64,6 +64,7 @@ Dead simple: **type to search, arrow to browse, `i` to install.**
  ↑ ↓ · j k    move through the list        g / G   jump to top / bottom
  enter        open / focus a tool
  i            install  (press a to pick a different method)
+ r            read the README in-app (inspect before you install)
  s            star / unstar on GitHub
  o            open the repo in your browser
  f            features / about            t       cycle theme
@@ -86,29 +87,33 @@ This is the hard part, and it's the point of tuistore.
 2. **Every tool carries platform-gated install methods.** A method knows what
    binaries it needs and where it's allowed to run, so `pacman -S` only appears
    on Arch, `brew` only where brew exists, `cargo` only where cargo is.
-3. **Methods come from three places, most-trusted first:**
-   - **official** — commands the project itself documents (hand-verified for the
-     featured suite),
-   - **from README** — scraped straight out of each repo's README (kept only
+3. **Methods come from three places, and the UI labels which is which:**
+   - ✓ **official** — commands the project itself documents (hand-verified for
+     the featured suite),
+   - ✓ **from README** — scraped straight out of each repo's README (kept only
      when the command actually names the tool, so dependency lines don't leak),
-   - **inferred** — a best-guess from the repo's primary language, always
-     labelled as a guess.
+   - ⚠ **unverified** — a best-guess from the repo's language, flagged so you
+     know to check it.
 4. **It ranks what's runnable** and offers the winner as the default — a clean
    managed install (brew / cargo / uv) before a `curl | sh`, verified before
    guessed — with every alternative one keypress (`a`) away.
-5. **It runs it in your login shell** and streams the output live, so it behaves
-   exactly like your normal terminal.
+5. **Before you commit, you can look.** The install screen shows the exact
+   command with a clear **✓ verified / ⚠ unverified** badge (and a loud warning
+   on remote `curl | sh` scripts), and **`r` opens the project's README right in
+   the store** so you can inspect a tool before you install it.
+6. **It runs in your login shell** and streams the output live — nothing is ever
+   run silently; you always see the exact command and confirm it.
 
-If nothing is known yet, tuistore scrapes the README the moment you open the
-tool (and caches it), or points you to the docs. Nothing is ever silently run —
-you always see the exact command and confirm it.
+<div align="center">
+<img src="assets/readme.png" alt="reading a tool's README in-app before installing" width="90%">
+</div>
 
 ## the catalog
 
 - **★ Featured — the suite.** [ltui](https://github.com/runpantheon/ltui),
   [jtui](https://github.com/Gheat1/jtui), [sctui](https://github.com/Gheat1/sctui),
-  [NaviTui](https://github.com/Gheat1/NaviTui), [opentab](https://github.com/Gheat1/opentab),
-  and [ricekit](https://github.com/Gheat1/ricekit) — pinned to the top.
+  [NaviTui](https://github.com/Gheat1/NaviTui), and
+  [ricekit](https://github.com/Gheat1/ricekit) — pinned to the top.
 - **670+ tools** from [rothgar/awesome-tuis](https://github.com/rothgar/awesome-tuis),
   grouped into 13 browsable categories, each enriched with live GitHub stars,
   language, and freshness.
@@ -139,7 +144,6 @@ If you like tuistore, you'll probably like the rest of the suite:
 | [**jtui**](https://github.com/Gheat1/jtui) | the same, for Jira |
 | [**sctui**](https://github.com/Gheat1/sctui) | the same, for Shortcut |
 | [**NaviTui**](https://github.com/Gheat1/NaviTui) | an animated terminal player for Navidrome |
-| [**opentab**](https://github.com/Gheat1/opentab) | browse your AI coding spend in the terminal |
 | [**ricekit**](https://github.com/Gheat1/ricekit) | the design system all of them share |
 
 ## config & data
