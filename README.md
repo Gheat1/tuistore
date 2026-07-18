@@ -14,7 +14,7 @@ Built on [🍚 ricekit](https://github.com/Gheat1/ricekit) · seeded from
 
 ![python](https://img.shields.io/badge/python-3.11+-4b8bbe)
 ![license](https://img.shields.io/badge/license-GPLv3-a6e3a1)
-![tools](https://img.shields.io/badge/catalog-670+_tuis-fab387)
+![tools](https://img.shields.io/badge/catalog-740+_apps-fab387)
 ![built on](https://img.shields.io/badge/built_on-ricekit-cba6f7)
 
 <img src="assets/gallery.png" alt="tuistore" width="100%">
@@ -32,7 +32,9 @@ commands in a README are for the *wrong* OS.
 
 tuistore fixes both. It's a fast, mouse-and-keyboard TUI that:
 
-- puts **670+ curated TUIs** one fuzzy-search away,
+- puts **740+ curated terminal apps** one fuzzy-search away — full-screen TUIs
+  *and* the modern CLI toolkit (fastfetch, neovim, ripgrep, bat, eza, starship,
+  zoxide, fzf…),
 - shows you the **install commands that actually work on your machine**, ranked,
 - installs them with **one key** and streams the output live,
 - and lets you **★ star** anything you like on GitHub, from the store.
@@ -157,8 +159,10 @@ and is recorded in the same ledger — so `tuistore installed`, `update`,
   [jtui](https://github.com/Gheat1/jtui), [sctui](https://github.com/Gheat1/sctui),
   [NaviTui](https://github.com/Gheat1/NaviTui), and
   [ricekit](https://github.com/Gheat1/ricekit) — pinned to the top.
-- **670+ tools** from [rothgar/awesome-tuis](https://github.com/rothgar/awesome-tuis),
-  grouped into 13 browsable categories, each enriched with live GitHub stars,
+- **740+ tools** — [rothgar/awesome-tuis](https://github.com/rothgar/awesome-tuis)
+  plus a curated set of terminal essentials (the fetchers, editors, and modern
+  CLI utilities people actually `brew install`), in browsable categories, each
+  enriched with live GitHub stars,
   language, and freshness.
 
 Refresh or grow the catalog any time — it's a single re-runnable script:

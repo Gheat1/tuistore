@@ -74,6 +74,145 @@ FEATURED = [
     ),
 ]
 
+# ── popular terminal apps beyond awesome-tuis ────────────────────────────────
+# The stuff people actually `brew install` — fastfetch, neovim, the modern CLI
+# toolkit — that a terminal-app store should carry even though they aren't
+# strictly full-screen TUIs. (name, url, category). Descriptions + language are
+# filled in by the GitHub enrichment pass; anything already in awesome-tuis is
+# de-duped away, and all of these are guaranteed a README scrape.
+ESSENTIALS: list[tuple[str, str, str]] = [
+    # Editors
+    ("Neovim", "https://github.com/neovim/neovim", "Editors"),
+    ("Helix", "https://github.com/helix-editor/helix", "Editors"),
+    ("micro", "https://github.com/zyedidia/micro", "Editors"),
+    ("Kakoune", "https://github.com/mawww/kakoune", "Editors"),
+    ("Vim", "https://github.com/vim/vim", "Editors"),
+    ("amp", "https://github.com/jmacdonald/amp", "Editors"),
+    # Shell & Prompt
+    ("Starship", "https://github.com/starship/starship", "Shell & Prompt"),
+    ("oh-my-posh", "https://github.com/JanDeDobbeleer/oh-my-posh", "Shell & Prompt"),
+    ("zoxide", "https://github.com/ajeetdsouza/zoxide", "Shell & Prompt"),
+    ("Atuin", "https://github.com/atuinsh/atuin", "Shell & Prompt"),
+    ("McFly", "https://github.com/cantino/mcfly", "Shell & Prompt"),
+    ("fzf", "https://github.com/junegunn/fzf", "Shell & Prompt"),
+    ("tmux", "https://github.com/tmux/tmux", "Shell & Prompt"),
+    ("Zellij", "https://github.com/zellij-org/zellij", "Shell & Prompt"),
+    ("fish", "https://github.com/fish-shell/fish-shell", "Shell & Prompt"),
+    ("Nushell", "https://github.com/nushell/nushell", "Shell & Prompt"),
+    ("thefuck", "https://github.com/nvbn/thefuck", "Shell & Prompt"),
+    ("navi", "https://github.com/denisidoro/navi", "Shell & Prompt"),
+    # CLI Tools (the modern-unix toolkit)
+    ("bat", "https://github.com/sharkdp/bat", "CLI Tools"),
+    ("eza", "https://github.com/eza-community/eza", "CLI Tools"),
+    ("lsd", "https://github.com/lsd-rs/lsd", "CLI Tools"),
+    ("fd", "https://github.com/sharkdp/fd", "CLI Tools"),
+    ("ripgrep", "https://github.com/BurntSushi/ripgrep", "CLI Tools"),
+    ("sd", "https://github.com/chmln/sd", "CLI Tools"),
+    ("jq", "https://github.com/jqlang/jq", "CLI Tools"),
+    ("yq", "https://github.com/mikefarah/yq", "CLI Tools"),
+    ("fx", "https://github.com/antonmedv/fx", "CLI Tools"),
+    ("gron", "https://github.com/tomnomnom/gron", "CLI Tools"),
+    ("jless", "https://github.com/PaulJuliusMartinez/jless", "CLI Tools"),
+    ("tldr", "https://github.com/tldr-pages/tldr", "CLI Tools"),
+    ("tealdeer", "https://github.com/dbrgn/tealdeer", "CLI Tools"),
+    ("cheat", "https://github.com/cheat/cheat", "CLI Tools"),
+    ("choose", "https://github.com/theryangeary/choose", "CLI Tools"),
+    ("dog", "https://github.com/ogham/dog", "CLI Tools"),
+    ("doggo", "https://github.com/mr-karan/doggo", "CLI Tools"),
+    ("HTTPie", "https://github.com/httpie/cli", "CLI Tools"),
+    ("xh", "https://github.com/ducaale/xh", "CLI Tools"),
+    ("curlie", "https://github.com/rs/curlie", "CLI Tools"),
+    ("glow", "https://github.com/charmbracelet/glow", "CLI Tools"),
+    ("gum", "https://github.com/charmbracelet/gum", "CLI Tools"),
+    ("vhs", "https://github.com/charmbracelet/vhs", "CLI Tools"),
+    ("slides", "https://github.com/maaslalani/slides", "CLI Tools"),
+    ("ugrep", "https://github.com/Genivia/ugrep", "CLI Tools"),
+    ("croc", "https://github.com/schollz/croc", "CLI Tools"),
+    ("rclone", "https://github.com/rclone/rclone", "CLI Tools"),
+    ("ouch", "https://github.com/ouch-org/ouch", "CLI Tools"),
+    ("miniserve", "https://github.com/svenstaro/miniserve", "CLI Tools"),
+    ("termscp", "https://github.com/veeso/termscp", "CLI Tools"),
+    # Development / Git
+    ("GitHub CLI", "https://github.com/cli/cli", "Development"),
+    ("tig", "https://github.com/jonas/tig", "Development"),
+    ("delta", "https://github.com/dandavison/delta", "Development"),
+    ("onefetch", "https://github.com/o2sh/onefetch", "Development"),
+    ("git-cliff", "https://github.com/orhun/git-cliff", "Development"),
+    ("gitleaks", "https://github.com/gitleaks/gitleaks", "Development"),
+    ("difftastic", "https://github.com/Wilfred/difftastic", "Development"),
+    ("serie", "https://github.com/lusingander/serie", "Development"),
+    ("scc", "https://github.com/boyter/scc", "Development"),
+    ("tokei", "https://github.com/XAMPPRocky/tokei", "Development"),
+    ("grex", "https://github.com/pemistahl/grex", "Development"),
+    ("just", "https://github.com/casey/just", "Development"),
+    ("direnv", "https://github.com/direnv/direnv", "Development"),
+    ("watchexec", "https://github.com/watchexec/watchexec", "Development"),
+    ("ast-grep", "https://github.com/ast-grep/ast-grep", "Development"),
+    ("hyperfine", "https://github.com/sharkdp/hyperfine", "Development"),
+    ("topgrade", "https://github.com/topgrade-rs/topgrade", "Development"),
+    ("mprocs", "https://github.com/pvolok/mprocs", "Development"),
+    ("gitui", "https://github.com/extrawurst/gitui", "Development"),
+    # Dashboards / System
+    ("fastfetch", "https://github.com/fastfetch-cli/fastfetch", "Dashboards"),
+    ("neofetch", "https://github.com/dylanaraps/neofetch", "Dashboards"),
+    ("gtop", "https://github.com/aksakalli/gtop", "Dashboards"),
+    ("procs", "https://github.com/dalance/procs", "Dashboards"),
+    ("dust", "https://github.com/bootandy/dust", "Dashboards"),
+    ("duf", "https://github.com/muesli/duf", "Dashboards"),
+    ("macchina", "https://github.com/Macchina-CLI/macchina", "Dashboards"),
+    ("cpufetch", "https://github.com/Dr-Noob/cpufetch", "Dashboards"),
+    ("ctop", "https://github.com/bcicen/ctop", "Dashboards"),
+    ("trippy", "https://github.com/fujiapple852/trippy", "Dashboards"),
+    ("zenith", "https://github.com/bvaisvil/zenith", "Dashboards"),
+    ("bottom", "https://github.com/ClementTsang/bottom", "Dashboards"),
+    ("bandwhich", "https://github.com/imsnif/bandwhich", "Dashboards"),
+    ("gping", "https://github.com/orf/gping", "Dashboards"),
+    # File Managers
+    ("yazi", "https://github.com/sxyazi/yazi", "File Managers"),
+    ("nnn", "https://github.com/jarun/nnn", "File Managers"),
+    ("lf", "https://github.com/gokcehan/lf", "File Managers"),
+    ("ranger", "https://github.com/ranger/ranger", "File Managers"),
+    ("joshuto", "https://github.com/kamiyaa/joshuto", "File Managers"),
+    ("superfile", "https://github.com/yorukot/superfile", "File Managers"),
+    ("xplr", "https://github.com/sayanarijit/xplr", "File Managers"),
+    ("felix", "https://github.com/kyoheiu/felix", "File Managers"),
+    ("broot", "https://github.com/Canop/broot", "File Managers"),
+    # Multimedia
+    ("ncspot", "https://github.com/hrkfdn/ncspot", "Multimedia"),
+    ("musikcube", "https://github.com/clangen/musikcube", "Multimedia"),
+    ("termusic", "https://github.com/tramhao/termusic", "Multimedia"),
+    ("spotify-player", "https://github.com/aome510/spotify-player", "Multimedia"),
+    ("cava", "https://github.com/karlstav/cava", "Multimedia"),
+    ("yt-dlp", "https://github.com/yt-dlp/yt-dlp", "Multimedia"),
+    ("chafa", "https://github.com/hpjansson/chafa", "Multimedia"),
+    ("viu", "https://github.com/atanunq/viu", "Multimedia"),
+    ("timg", "https://github.com/hzeller/timg", "Multimedia"),
+    # Productivity
+    ("Taskwarrior", "https://github.com/GothenburgBitFactory/taskwarrior", "Productivity"),
+    ("calcure", "https://github.com/anufrievroman/calcure", "Productivity"),
+    ("buku", "https://github.com/jarun/buku", "Productivity"),
+    ("taskell", "https://github.com/smallhadroncollider/taskell", "Productivity"),
+    # Screensavers / fun
+    ("cmatrix", "https://github.com/abishekvashok/cmatrix", "Screensavers"),
+    ("pipes.sh", "https://github.com/pipeseroni/pipes.sh", "Screensavers"),
+    ("lolcat", "https://github.com/busyloop/lolcat", "Screensavers"),
+    ("genact", "https://github.com/svenstaro/genact", "Screensavers"),
+    ("neo", "https://github.com/st3w/neo", "Screensavers"),
+]
+
+# Homebrew formula names for essentials where the formula != the repo name.
+# Every other essential gets `brew install <repo-name>` inferred (usually right;
+# a README-scraped brew command, if any, wins over it on dedupe).
+ESSENTIAL_BREW = {  # keyed by owner/repo slug
+    "cli/cli": "gh",
+    "httpie/cli": "httpie",
+    "dandavison/delta": "git-delta",
+    "fish-shell/fish-shell": "fish",
+    "GothenburgBitFactory/taskwarrior": "task",
+    "pipeseroni/pipes.sh": "pipes-sh",
+    "aome510/spotify-player": "spotify_player",
+}
+
 
 # ── 1. parse awesome-tuis ───────────────────────────────────────────────────
 _H2 = re.compile(r"<h2>(.*?)</h2>", re.IGNORECASE)
@@ -196,6 +335,8 @@ async def add_methods(entries: list[dict], scrape_top: int) -> None:
     # featured tools keep only their hand-curated official methods — no
     # scraped/inferred noise (e.g. a monorepo README's sibling-package installs)
     scrape_set = {id(e) for e in ranked[:scrape_top] if not e.get("featured")}
+    # always scrape the hand-picked essentials so they get verified installs
+    scrape_set |= {id(e) for e in entries if e.get("_essential")}
 
     sem = asyncio.Semaphore(8)
     scraped_count = 0
@@ -220,6 +361,13 @@ async def add_methods(entries: list[dict], scrape_top: int) -> None:
         # inferred fallbacks from language
         for m in infer_methods(e["url"], e.get("language")):
             methods.append(m.to_dict())
+        # essentials get a homebrew method — they're almost all in brew, and it's
+        # what most people (and Mac users) reach for. Scraped brew, if any, wins.
+        if e.get("_essential"):
+            owner, repo = parse_repo(e["url"])
+            formula = ESSENTIAL_BREW.get(f"{owner}/{repo}", repo.lower())
+            methods.append(make("brew", f"brew install {formula}",
+                                source="inferred", note="homebrew").to_dict())
         # dedupe by (kind, command), keep first (best source wins by order)
         seen = set()
         deduped = []
@@ -260,7 +408,25 @@ async def amain(args) -> None:
         e["_methods"] = e.pop("methods", [])
         featured_entries.append(e)
 
-    entries = featured_entries + parsed
+    # popular terminal apps (fastfetch, neovim, the modern CLI toolkit…).
+    # New ones get added; ones already in awesome-tuis get flagged essential so
+    # they still get a guaranteed scrape + homebrew method.
+    parsed_by_slug = {parse_repo(e["url"]): e for e in parsed}
+    essentials, flagged, added = [], 0, set()
+    for name, url, cat in ESSENTIALS:
+        r = parse_repo(url)
+        if not r or r in featured_keys or r in added:
+            continue
+        added.add(r)
+        if r in parsed_by_slug:
+            parsed_by_slug[r]["_essential"] = True  # flag existing awesome-tuis entry
+            flagged += 1
+        else:
+            essentials.append(dict(name=name, url=url, description="",
+                                   category=cat, _essential=True))
+    print(f"  + {len(essentials)} new terminal apps, {flagged} existing flagged essential")
+
+    entries = featured_entries + parsed + essentials
 
     await enrich(entries)                 # cheap, batched — always worth it
     await add_methods(entries, args.scrape)
@@ -276,10 +442,11 @@ async def amain(args) -> None:
 
     for e in entries:
         e.pop("_methods", None)
+        e.pop("_essential", None)
 
     doc = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "source": "awesome-tuis (rothgar/awesome-tuis) + Gheat suite",
+        "source": "awesome-tuis (rothgar/awesome-tuis) + modern terminal essentials + Gheat suite",
         "count": len(entries),
         "entries": entries,
     }
