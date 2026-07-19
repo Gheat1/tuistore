@@ -2,14 +2,15 @@
 
 # 🛍️ tuistore
 
-**The TUI app store — find, search, and one-key-install hundreds of terminal apps, without leaving the terminal.**
+**The TUI app store: find, search, and one-key-install hundreds of terminal apps, without leaving the terminal.**
 
 Browse a curated catalog of TUIs, read the details, and install with a single
 key — tuistore figures out *how* to install each one on **your** machine
 (cargo, brew, pacman, uv, go, docker…) so you never paste a command your box
 can't run. Star the ones you love straight to GitHub.
 
-Want your TUI featured? Go here -> [gheat.net/#p/tuistore](https://gheat.net/#p/tuistore)
+
+**Want your TUI featured? Go here -> [gheat.net/#p/tuistore](https://gheat.net/#p/tuistore)**
 
 Built on [🍚 ricekit](https://github.com/Gheat1/ricekit) · seeded from
 [awesome-tuis](https://github.com/rothgar/awesome-tuis) · made by [@Gheat1](https://github.com/Gheat1)
