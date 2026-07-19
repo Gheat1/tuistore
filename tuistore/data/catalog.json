@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-07-19T19:30:57Z",
+ "generated_at": "2026-07-19T19:48:10Z",
  "source": "awesome-tuis (rothgar/awesome-tuis) + modern terminal essentials + Gheat suite",
- "count": 755,
+ "count": 756,
  "entries": [
   {
    "name": "ltui",
@@ -11,7 +11,7 @@
    "description": "A fast, clean TUI for Linear — status-grouped issues, instant startup, full keyboard + mouse control.",
    "author_note": "by Gheat · the app the whole suite (and ricekit) grew out of",
    "featured": true,
-   "stars": 71,
+   "stars": 72,
    "archived": false,
    "pushed_at": "2026-07-15T00:59:32Z",
    "methods": [
@@ -312,10 +312,10 @@
    "url": "https://github.com/sst/opencode",
    "description": "AI coding agent, built for the terminal",
    "category": "Development",
-   "stars": 187480,
+   "stars": 187481,
    "language": "TypeScript",
    "archived": false,
-   "pushed_at": "2026-07-19T16:32:33Z",
+   "pushed_at": "2026-07-19T19:45:05Z",
    "homepage": "https://opencode.ai",
    "methods": [
     {
@@ -494,10 +494,10 @@
    "url": "https://github.com/neovim/neovim",
    "description": "Vim-fork focused on extensibility and usability",
    "category": "Editors",
-   "stars": 101244,
+   "stars": 101245,
    "language": "Vim Script",
    "archived": false,
-   "pushed_at": "2026-07-19T17:29:57Z",
+   "pushed_at": "2026-07-19T19:42:59Z",
    "homepage": "https://neovim.io",
    "methods": [
     {
@@ -525,10 +525,10 @@
    "url": "https://github.com/openai/codex",
    "description": "Lightweight coding agent that runs in your terminal",
    "category": "Development",
-   "stars": 99647,
+   "stars": 99648,
    "language": "Rust",
    "archived": false,
-   "pushed_at": "2026-07-19T17:38:57Z",
+   "pushed_at": "2026-07-19T19:46:27Z",
    "methods": [
     {
      "kind": "script",
@@ -681,7 +681,7 @@
    "url": "https://github.com/junegunn/fzf",
    "description": "A general-purpose command-line fuzzy finder",
    "category": "Miscellaneous",
-   "stars": 81845,
+   "stars": 81847,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-19T07:38:32Z",
@@ -827,7 +827,7 @@
    "url": "https://github.com/jesseduffield/lazygit",
    "description": "Simple terminal UI for git commands",
    "category": "Development",
-   "stars": 80521,
+   "stars": 80522,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-19T17:29:23Z",
@@ -1293,7 +1293,7 @@
    "url": "https://github.com/starship/starship",
    "description": "☄🌌️ The minimal, blazing-fast, and infinitely customizable prompt for any shell!",
    "category": "Shell & Prompt",
-   "stars": 58947,
+   "stars": 58949,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-19T15:04:11Z",
@@ -1436,7 +1436,7 @@
    "url": "https://github.com/rclone/rclone",
    "description": "\"rsync for cloud storage\" - Google Drive, S3, Dropbox, Backblaze B2, One Drive, Swift, Hubic, Wasabi, Google Cloud Storage, Azure Blob, Azure Files, Yandex Files",
    "category": "CLI Tools",
-   "stars": 58413,
+   "stars": 58414,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-19T18:03:42Z",
@@ -1863,7 +1863,7 @@
    "url": "https://github.com/sharkdp/fd",
    "description": "A simple, fast and user-friendly alternative to 'find'",
    "category": "CLI Tools",
-   "stars": 43789,
+   "stars": 43790,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-15T20:22:26Z",
@@ -2241,7 +2241,7 @@
    "url": "https://github.com/ajeetdsouza/zoxide",
    "description": "A smarter cd command. Supports all major shells.",
    "category": "Shell & Prompt",
-   "stars": 38118,
+   "stars": 38119,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-16T12:23:25Z",
@@ -3935,7 +3935,7 @@
    "url": "https://github.com/fastfetch-cli/fastfetch",
    "description": "A maintained, feature-rich and performance oriented, neofetch like system information tool.",
    "category": "Dashboards",
-   "stars": 23805,
+   "stars": 23806,
    "language": "C",
    "archived": false,
    "pushed_at": "2026-07-19T10:06:29Z",
@@ -4393,7 +4393,7 @@
    "url": "https://github.com/allinurl/goaccess",
    "description": "GoAccess is a real-time web log analyzer and interactive viewer that runs in a terminal in nix systems or through your browser.",
    "category": "Dashboards",
-   "stars": 20717,
+   "stars": 20718,
    "language": "C",
    "archived": false,
    "pushed_at": "2026-07-18T23:04:55Z",
@@ -4683,7 +4683,7 @@
    "url": "https://github.com/MHNightCat/superfile",
    "description": "Pretty fancy and modern terminal file manager.",
    "category": "File Managers",
-   "stars": 18676,
+   "stars": 18678,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-18T04:40:39Z",
@@ -4714,7 +4714,7 @@
    "url": "https://github.com/yorukot/superfile",
    "description": "Pretty fancy and modern terminal file manager",
    "category": "File Managers",
-   "stars": 18676,
+   "stars": 18678,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-18T04:40:39Z",
@@ -7417,7 +7417,7 @@
    "url": "https://github.com/rastapasta/mapscii",
    "description": "Braille & ASCII world map renderer for your console",
    "category": "Miscellaneous",
-   "stars": 9188,
+   "stars": 9187,
    "language": "JavaScript",
    "archived": false,
    "pushed_at": "2024-11-03T16:02:52Z",
@@ -9068,7 +9068,7 @@
    "url": "https://github.com/tconbeer/harlequin",
    "description": "The SQL IDE for Your Terminal",
    "category": "Development",
-   "stars": 6264,
+   "stars": 6265,
    "language": "Python",
    "archived": false,
    "pushed_at": "2026-07-17T20:50:11Z",
@@ -9520,7 +9520,7 @@
    "url": "https://github.com/dundee/gdu",
    "description": "Fast disk usage analyzer with console interface written in Go",
    "category": "Miscellaneous",
-   "stars": 5826,
+   "stars": 5827,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-16T23:52:34Z",
@@ -9943,7 +9943,7 @@
    "url": "https://github.com/rakshasa/rtorrent",
    "description": "A text-based BitTorrent client written in C++",
    "category": "Web",
-   "stars": 4814,
+   "stars": 4815,
    "language": "C++",
    "archived": false,
    "pushed_at": "2026-07-19T09:54:00Z",
@@ -10172,7 +10172,7 @@
    "url": "https://github.com/Maxteabag/sqlit",
    "description": "A lightweight TUI for SQL databases inspired by lazygit",
    "category": "Development",
-   "stars": 4513,
+   "stars": 4514,
    "language": "Python",
    "archived": false,
    "pushed_at": "2026-07-14T19:03:44Z",
@@ -12975,7 +12975,7 @@
    "stars": 2338,
    "language": "TypeScript",
    "archived": false,
-   "pushed_at": "2026-07-19T18:50:42Z",
+   "pushed_at": "2026-07-19T19:46:15Z",
    "methods": [
     {
      "kind": "npm",
@@ -13075,7 +13075,7 @@
    "url": "https://github.com/markqvist/NomadNet",
    "description": "Secure messaging network built on Reticulum",
    "category": "Messaging",
-   "stars": 2305,
+   "stars": 2306,
    "language": "Python",
    "archived": false,
    "pushed_at": "2026-05-28T17:27:13Z",
@@ -13660,7 +13660,7 @@
    "url": "https://github.com/lusingander/serie",
    "description": "A rich git commit graph",
    "category": "Development",
-   "stars": 1989,
+   "stars": 1990,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-19T09:28:47Z",
@@ -14281,7 +14281,7 @@
    "stars": 1695,
    "language": "Go",
    "archived": false,
-   "pushed_at": "2026-07-19T19:21:05Z",
+   "pushed_at": "2026-07-19T19:35:58Z",
    "homepage": "https://gomuks.app",
    "methods": [
     {
@@ -15067,7 +15067,7 @@
    "stars": 1287,
    "language": "Go",
    "archived": false,
-   "pushed_at": "2026-07-19T19:26:30Z",
+   "pushed_at": "2026-07-19T19:39:32Z",
    "homepage": "https://snips.sh",
    "methods": [
     {
@@ -15205,7 +15205,7 @@
    "url": "https://github.com/lasantosr/intelli-shell",
    "description": "Manage command templates/snippets with dynamic completions and AI integration",
    "category": "Productivity",
-   "stars": 1250,
+   "stars": 1251,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-06T11:27:15Z",
@@ -15345,7 +15345,7 @@
    "url": "https://github.com/amir20/dtop",
    "description": "Terminal dashboard for Docker monitoring across multiple hosts",
    "category": "Docker/LXC/K8s",
-   "stars": 1193,
+   "stars": 1194,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-19T00:55:00Z",
@@ -15480,7 +15480,7 @@
    "language": "C++",
    "stars": 1159,
    "archived": false,
-   "pushed_at": "2026-07-19T19:21:50Z",
+   "pushed_at": "2026-07-19T19:31:54Z",
    "homepage": "https://gammasoft71.github.io/xtd",
    "methods": [
     {
@@ -16525,11 +16525,41 @@
    ]
   },
   {
+   "name": "ec2-instance-selector",
+   "url": "https://github.com/aws/amazon-ec2-instance-selector",
+   "description": "A CLI tool and go library which recommends instance types based on resource criteria like vcpus and memory",
+   "category": "Miscellaneous",
+   "stars": 932,
+   "language": "Go",
+   "archived": false,
+   "pushed_at": "2025-12-22T15:45:18Z",
+   "methods": [
+    {
+     "kind": "go",
+     "command": "go install github.com/aws/amazon-ec2-instance-selector@latest",
+     "source": "inferred",
+     "requires": [
+      "go"
+     ],
+     "note": "module path from repo"
+    },
+    {
+     "kind": "source",
+     "command": "git clone https://github.com/aws/amazon-ec2-instance-selector && cd amazon-ec2-instance-selector",
+     "source": "inferred",
+     "requires": [
+      "git"
+     ],
+     "note": "then build per the README"
+    }
+   ]
+  },
+  {
    "name": "concord",
    "url": "https://github.com/chojs23/concord",
    "description": "A feature-rich TUI client for Discord",
    "category": "Messaging",
-   "stars": 932,
+   "stars": 931,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-17T16:29:20Z",
@@ -16556,36 +16586,6 @@
     {
      "kind": "source",
      "command": "git clone https://github.com/chojs23/concord && cd concord",
-     "source": "inferred",
-     "requires": [
-      "git"
-     ],
-     "note": "then build per the README"
-    }
-   ]
-  },
-  {
-   "name": "ec2-instance-selector",
-   "url": "https://github.com/aws/amazon-ec2-instance-selector",
-   "description": "A CLI tool and go library which recommends instance types based on resource criteria like vcpus and memory",
-   "category": "Miscellaneous",
-   "stars": 932,
-   "language": "Go",
-   "archived": false,
-   "pushed_at": "2025-12-22T15:45:18Z",
-   "methods": [
-    {
-     "kind": "go",
-     "command": "go install github.com/aws/amazon-ec2-instance-selector@latest",
-     "source": "inferred",
-     "requires": [
-      "go"
-     ],
-     "note": "module path from repo"
-    },
-    {
-     "kind": "source",
-     "command": "git clone https://github.com/aws/amazon-ec2-instance-selector && cd amazon-ec2-instance-selector",
      "source": "inferred",
      "requires": [
       "git"
@@ -17154,7 +17154,7 @@
    "url": "https://github.com/0xjuanma/golazo",
    "description": "Get soccer minute-by-minute updates and finished match stats in your terminal",
    "category": "Miscellaneous",
-   "stars": 810,
+   "stars": 811,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-06T00:31:12Z",
@@ -22100,7 +22100,7 @@
    "url": "https://github.com/gmt4/mpvc",
    "description": "A mpc-like control interface for mpv",
    "category": "Multimedia",
-   "stars": 152,
+   "stars": 153,
    "language": "Shell",
    "archived": false,
    "pushed_at": "2026-07-18T15:31:53Z",
@@ -22274,7 +22274,7 @@
    "stars": 146,
    "language": "Rust",
    "archived": false,
-   "pushed_at": "2026-07-19T17:42:11Z",
+   "pushed_at": "2026-07-19T19:43:13Z",
    "homepage": "https://kanban.rs",
    "methods": [
     {
@@ -28528,6 +28528,45 @@
    "url": "https://gitlab.com/BlackEdder/rttt",
    "description": "A Hackernews, RSS and Reddit reader for the terminal written in C++.",
    "category": "Web"
+  },
+  {
+   "name": "fetchwatch",
+   "url": "https://github.com/zsubzwary/fetchwatch",
+   "description": "",
+   "category": "CLI Tools",
+   "stars": 0,
+   "language": "TypeScript",
+   "archived": false,
+   "pushed_at": "2026-07-15T13:43:09Z",
+   "methods": [
+    {
+     "kind": "npm",
+     "command": "npm install -g fetchwatch",
+     "source": "inferred",
+     "requires": [
+      "npm"
+     ],
+     "note": "guessed from repo name"
+    },
+    {
+     "kind": "source",
+     "command": "git clone https://github.com/zsubzwary/fetchwatch && cd fetchwatch",
+     "source": "inferred",
+     "requires": [
+      "git"
+     ],
+     "note": "then build per the README"
+    },
+    {
+     "kind": "brew",
+     "command": "brew install fetchwatch",
+     "source": "inferred",
+     "requires": [
+      "brew"
+     ],
+     "note": "homebrew"
+    }
+   ]
   }
  ]
 }

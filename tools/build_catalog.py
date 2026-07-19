@@ -163,6 +163,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("fx", "https://github.com/antonmedv/fx", "CLI Tools"),
     ("gron", "https://github.com/tomnomnom/gron", "CLI Tools"),
     ("jless", "https://github.com/PaulJuliusMartinez/jless", "CLI Tools"),
+    ("fetchwatch", "https://github.com/zsubzwary/fetchwatch", "CLI Tools"),
     ("tldr", "https://github.com/tldr-pages/tldr", "CLI Tools"),
     ("tealdeer", "https://github.com/dbrgn/tealdeer", "CLI Tools"),
     ("cheat", "https://github.com/cheat/cheat", "CLI Tools"),
