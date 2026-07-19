@@ -7,7 +7,7 @@ name = "tuistore"
 version = "0.3.3"
 description = "🛍️  The TUI app store — browse, search, and one-key install hundreds of terminal apps, right from your terminal"
 readme = "README.md"
-license = { text = "PolyForm-Strict-1.0.0" }
+license = { text = "GPL-3.0-or-later" }
 authors = [{ name = "Gheat" }]
 requires-python = ">=3.11"
 dependencies = [
@@ -19,7 +19,7 @@ keywords = ["tui", "terminal", "textual", "app-store", "package-manager", "aweso
 classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: Other/Proprietary License",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python :: 3",
     "Topic :: Terminals",
     "Topic :: System :: Software Distribution",
