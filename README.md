@@ -9,6 +9,8 @@ key — tuistore figures out *how* to install each one on **your** machine
 (cargo, brew, pacman, uv, go, docker…) so you never paste a command your box
 can't run. Star the ones you love straight to GitHub.
 
+[gheat.net/tuistore](https://gheat.net/#p/tuistore)
+
 Built on [🍚 ricekit](https://github.com/Gheat1/ricekit) · seeded from
 [awesome-tuis](https://github.com/rothgar/awesome-tuis) · made by [@Gheat1](https://github.com/Gheat1)
 
