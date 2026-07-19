@@ -441,7 +441,7 @@ async def add_methods(entries: list[dict], scrape_top: int) -> None:
 # ── main ─────────────────────────────────────────────────────────────────────
 def load_awesome(local: str | None) -> str:
     if local and Path(local).exists():
-        return Path(local).read_text()
+        return Path(local).read_text(encoding="utf-8")
     print("  fetching awesome-tuis README…")
     with urllib.request.urlopen(AWESOME_URL, timeout=30) as r:
         return r.read().decode("utf-8")
@@ -506,7 +506,7 @@ async def amain(args) -> None:
         "entries": entries,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(doc, indent=1, ensure_ascii=False))
+    OUT.write_text(json.dumps(doc, indent=1, ensure_ascii=False), encoding="utf-8")
     have_methods = sum(1 for e in entries if e.get("methods"))
     print(f"\n  wrote {OUT.relative_to(ROOT)}")
     print(f"  {len(entries)} tools · {have_methods} with install methods · "

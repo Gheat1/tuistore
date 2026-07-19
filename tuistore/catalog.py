@@ -14,6 +14,7 @@ from functools import lru_cache
 from importlib import resources
 
 from .installer import Method, parse_repo
+from .paths import user_data_dir
 
 
 @dataclass
@@ -182,7 +183,7 @@ def search(entries: list[Entry], query: str, *, category: str | None = None,
 # reinstalling the whole package.
 from pathlib import Path  # noqa: E402
 
-USER_CATALOG = Path.home() / ".local/state/tuistore/catalog.json"
+USER_CATALOG = user_data_dir() / "catalog.json"
 CATALOG_URL = (
     "https://raw.githubusercontent.com/Gheat1/tuistore/main/tuistore/data/catalog.json"
 )
@@ -190,7 +191,7 @@ CATALOG_URL = (
 
 def _bundled_text() -> str | None:
     try:
-        return resources.files("tuistore.data").joinpath("catalog.json").read_text()
+        return resources.files("tuistore.data").joinpath("catalog.json").read_text(encoding="utf-8")
     except (FileNotFoundError, ModuleNotFoundError, OSError):
         return None
 
@@ -272,7 +273,7 @@ def load() -> Catalog:
     user = None
     try:
         if USER_CATALOG.exists():
-            user = USER_CATALOG.read_text()
+            user = USER_CATALOG.read_text(encoding="utf-8")
     except OSError:
         user = None
 
@@ -303,7 +304,7 @@ def refetch(url: str = CATALOG_URL, dest: Path = USER_CATALOG) -> tuple[bool, st
         doc = json.loads(raw)  # validate before writing
         n = len(doc.get("entries", []))
         dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(raw)
+        dest.write_text(raw, encoding="utf-8")
         load.cache_clear()
         return True, f"{n} tools · updated {doc.get('generated_at', '')}"
     except Exception as e:
@@ -323,5 +324,5 @@ def _dedupe(entries: list[Entry]) -> list[Entry]:
 
 
 def load_from(path) -> Catalog:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return _parse(f.read())

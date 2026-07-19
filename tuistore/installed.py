@@ -20,14 +20,15 @@ from functools import lru_cache
 from pathlib import Path
 
 from .installer import Method
+from .paths import user_data_dir
 
-LEDGER = Path.home() / ".local/state/tuistore/installed.json"
+LEDGER = user_data_dir() / "installed.json"
 
 
 # ── the ledger ──────────────────────────────────────────────────────────────
 def load_ledger() -> dict:
     try:
-        return json.loads(LEDGER.read_text())
+        return json.loads(LEDGER.read_text(encoding="utf-8"))
     except Exception:
         return {}
 
@@ -35,7 +36,7 @@ def load_ledger() -> dict:
 def save_ledger(data: dict) -> None:
     try:
         LEDGER.parent.mkdir(parents=True, exist_ok=True)
-        LEDGER.write_text(json.dumps(data, indent=1))
+        LEDGER.write_text(json.dumps(data, indent=1), encoding="utf-8")
     except Exception:
         pass
 
@@ -77,6 +78,7 @@ _NOISE = {
     "pacman", "yay", "paru", "apt", "apt-get", "nala", "dnf", "yum", "zypper",
     "xbps-install", "apk", "nix", "nix-env", "flatpak", "snap", "emerge",
     "python", "python3", "-m", "i",
+    "scoop", "choco", "winget",
 }
 
 
@@ -167,6 +169,9 @@ _UNINSTALL = {
     "flatpak": "flatpak uninstall {pkg}",
     "snap": "sudo snap remove {pkg}",
     "go": 'rm -f "$(go env GOPATH)/bin/{bin}"',
+    "scoop": "scoop uninstall {pkg}",
+    "choco": "choco uninstall {pkg}",
+    "winget": "winget uninstall {pkg} --disable-interactivity",
 }
 
 _UPDATE = {
@@ -190,6 +195,9 @@ _UPDATE = {
     "nix": "nix profile upgrade {pkg}",
     "flatpak": "flatpak update {pkg}",
     "snap": "sudo snap refresh {pkg}",
+    "scoop": "scoop update {pkg}",
+    "choco": "choco upgrade {pkg}",
+    "winget": "winget upgrade {pkg} --disable-interactivity",
 }
 
 
@@ -223,14 +231,26 @@ def update_command(rec: dict) -> str | None:
 # ── detection ───────────────────────────────────────────────────────────────
 @lru_cache(maxsize=1)
 def path_binaries() -> frozenset[str]:
-    """Every executable name on PATH — scanned once, cheap to test against."""
+    """Every executable name on PATH — scanned once, cheap to test against.
+
+    On Windows we also strip common executable extensions so that a binary
+    named ``rg.exe`` is recorded simply as ``rg``.
+    """
     found: set[str] = set()
     for d in os.environ.get("PATH", "").split(os.pathsep):
         if not d:
             continue
         try:
             for entry in os.scandir(d):
-                found.add(entry.name)
+                name = entry.name
+                normalized = name.lower() if os.name == "nt" else name
+                found.add(normalized)
+                # On Windows, executables often have extensions; keep both the
+                # raw name and the extension-stripped name for matching.
+                if os.name == "nt" and "." in name:
+                    base, _ext = normalized.rsplit(".", 1)
+                    if base:
+                        found.add(base)
         except OSError:
             continue
     return frozenset(found)
@@ -299,6 +319,51 @@ def _run(cmd: list[str], timeout: float = 25.0) -> str:
         return ""
 
 
+def _scoop_installed() -> set[str]:
+    names = set()
+    for ln in _run(["scoop", "list"]).splitlines():
+        ln = ln.strip()
+        if (ln and not ln.startswith("-") and not ln.startswith("Name")
+                and ln.lower() not in {"installed apps:", "installed apps"}):
+            names.add(ln.split()[0].lower())
+    return names
+
+
+def _choco_installed() -> set[str]:
+    names = set()
+    for ln in _run(["choco", "list", "--local-only", "--limit-output"]).splitlines():
+        if ln.strip() and "|" in ln:
+            names.add(ln.split("|")[0].lower())
+    return names
+
+
+def _winget_installed() -> set[str]:
+    names = set()
+    id_column: int | None = None
+    for ln in _run(["winget", "list", "--disable-interactivity"]).splitlines():
+        lower = ln.lower()
+        if id_column is None and lower.lstrip().startswith("name") and "id" in lower:
+            id_column = lower.index("id")
+            continue
+        if not ln.strip() or set(ln.strip()) <= {"-", " ", "\u2500"}:
+            continue
+        if id_column is not None:
+            # `winget list` is a fixed-width table. Store both display name
+            # and package ID because catalog commands commonly use `--id`.
+            display = ln[:id_column].strip().lower()
+            fields = ln[id_column:].split()
+            if display:
+                names.add(display)
+            if fields:
+                names.add(fields[0].lower())
+            continue
+        # Older winget versions do not reliably expose a table header.
+        parts = ln.split()
+        if parts:
+            names.add(parts[0].lower())
+    return names
+
+
 def _brew_installed() -> set[str]:
     out = _run(["brew", "list", "--formula", "-1"])
     out += "\n" + _run(["brew", "list", "--cask", "-1"])
@@ -349,6 +414,12 @@ def scan_installed(env) -> dict[str, set[str]]:
         out["npm"] = _npm_installed()
     if env.has("cargo"):
         out["cargo"] = _cargo_installed()
+    if "scoop" in env.tools:
+        out["scoop"] = _scoop_installed()
+    if "choco" in env.tools:
+        out["choco"] = _choco_installed()
+    if "winget" in env.tools:
+        out["winget"] = _winget_installed()
     return out
 
 
@@ -368,6 +439,10 @@ _BULK_UPGRADE = [
     ("apt", "sudo apt update && sudo apt upgrade -y", True),
     ("dnf", "sudo dnf upgrade -y", True),
     ("zypper", "sudo zypper update -y", True),
+    # Windows package managers
+    ("scoop", "scoop update *", False),
+    ("choco", "choco upgrade all -y", False),
+    ("winget", "winget upgrade --all --disable-interactivity --accept-source-agreements --accept-package-agreements", False),
 ]
 
 

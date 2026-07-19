@@ -17,11 +17,11 @@ from __future__ import annotations
 
 import asyncio
 import re
-import shutil
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Iterable
 
 from .platform import Env
+from .shell import shell_command
 
 # ── kind metadata ──────────────────────────────────────────────────────────
 # kind -> (label, preference[lower=better], requires, os allow, family allow)
@@ -52,12 +52,32 @@ KINDS: dict[str, dict] = {
     "snap":     dict(label="snap install",        pref=32, requires=["snap"],    os=["linux"]),
     "docker":   dict(label="docker",              pref=35, requires=["docker"]),
     "podman":   dict(label="podman",              pref=36, requires=["podman"]),
+    # Windows package managers
+    "scoop":    dict(label="scoop install",       pref=37, requires=["scoop"],    os=["windows"]),
+    "choco":    dict(label="choco install",       pref=38, requires=["choco"],    os=["windows"]),
+    "winget":   dict(label="winget install",      pref=39, requires=["winget"],   os=["windows"]),
     "script":   dict(label="install script",      pref=40, requires=["curl"]),
     "source":   dict(label="build from source",   pref=50, requires=["git"]),
     "manual":   dict(label="see README",          pref=99, requires=[]),
 }
 
 _SOURCE_RANK = {"official": 0, "readme": 1, "inferred": 3}
+
+
+def _script_os(command: str) -> list[str] | None:
+    """Return the platform a remote install script targets, when known."""
+    if re.search(r"\b(?:iwr|invoke-webrequest)\b.*\|\s*(?:iex|invoke-expression)\b", command, re.I):
+        return ["windows"]
+    if re.search(r"\b(?:curl|wget)\b.*\|\s*(?:sudo\s+)?(?:sh|bash)\b", command):
+        return ["macos", "linux"]
+    return None
+
+
+def _required_tools(method: "Method") -> list[str]:
+    """Dependencies after accounting for a PowerShell-native script."""
+    if method.kind == "script" and _script_os(method.command) == ["windows"]:
+        return []
+    return method.requires
 
 
 @dataclass
@@ -106,11 +126,12 @@ class Method:
         return len(parts) == 2 and parts[0].startswith("git clone ") and parts[1].startswith("cd ")
 
     def available(self, env: Env) -> bool:
-        if self.os and env.os not in self.os:
+        allowed_os = self.os or (_script_os(self.command) if self.kind == "script" else None)
+        if allowed_os and env.os not in allowed_os:
             return False
         if self.families and not (set(self.families) & env.families):
             return False
-        return env.has(*self.requires)
+        return env.has(*_required_tools(self))
 
     def score(self, env: Env) -> tuple:
         pref = KINDS.get(self.kind, {}).get("pref", 60)
@@ -127,11 +148,12 @@ class Method:
         return (0 if self.available(env) else 1, src, pref)
 
     def why_unavailable(self, env: Env) -> str:
-        if self.os and env.os not in self.os:
-            return f"{'/'.join(self.os)} only"
+        allowed_os = self.os or (_script_os(self.command) if self.kind == "script" else None)
+        if allowed_os and env.os not in allowed_os:
+            return f"{'/'.join(allowed_os)} only"
         if self.families and not (set(self.families) & env.families):
             return f"{'/'.join(self.families)} only"
-        missing = [r for r in self.requires if r not in env.tools]
+        missing = [r for r in _required_tools(self) if r not in env.tools]
         if missing:
             return f"needs {' + '.join(missing)}"
         return ""
@@ -188,6 +210,13 @@ def force_variant(kind: str, command: str) -> str:
         return f"{command} --force-reinstall"
     if kind == "brew" and command.strip().startswith("brew install"):
         return command.replace("brew install", "brew reinstall", 1)
+    if kind == "choco" and "--force" not in command:
+        return f"{command} --force"
+    if kind == "winget" and "--force" not in command:
+        return f"{command} --force"
+    if kind == "scoop" and command.strip().startswith("scoop install"):
+        # scoop has no native force flag; uninstall then install
+        return command.replace("scoop install", "scoop uninstall", 1) + " && " + command
     return command  # go/npm/gem/distro managers reinstall on re-run anyway
 
 
@@ -219,7 +248,12 @@ _CLASSIFY = [
     ("brew", re.compile(r"\bbrew\s+install\b")),
     ("docker", re.compile(r"\bdocker\s+(?:run|pull)\b")),
     ("podman", re.compile(r"\bpodman\s+(?:run|pull)\b")),
+    ("scoop", re.compile(r"\bscoop\s+install\b")),
+    ("choco", re.compile(r"\bchoco(?:co)?\s+install\b")),
+    ("winget", re.compile(r"\bwinget\s+install\b")),
+    # remote install scripts: POSIX curl|sh and PowerShell iwr|iex
     ("script", re.compile(r"\bcurl\b.*\|\s*(?:sudo\s+)?(?:sh|bash)\b|\bwget\b.*\|\s*(?:sh|bash)\b")),
+    ("script", re.compile(r"(?i)\b(?:iwr|invoke-webrequest)\b.*\|\s*(?:iex|invoke-expression)\b")),
 ]
 
 
@@ -302,10 +336,10 @@ async def run_stream(command: str) -> AsyncIterator[tuple[str, str]]:
     """Execute `command` in a login shell, yielding ("out", line) as it runs
     and finally ("exit", returncode). A login shell is used so the user's
     package managers are on PATH exactly as in their normal terminal."""
-    shell = shutil.which("bash") or shutil.which("zsh") or "/bin/sh"
+    shell, shell_args = shell_command()
     try:
         proc = await asyncio.create_subprocess_exec(
-            shell, "-lc", command,
+            shell, *shell_args, command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
         )

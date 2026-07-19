@@ -22,14 +22,14 @@ from textual.widgets.option_list import Option
 
 from ricekit import KitApp, icons, palette
 from ricekit.modals import HelpModal, PickerModal, ThemeModal  # noqa: F401
-from ricekit.storage import AppDirs
 from ricekit.widgets import KitScroll, NavList, Splitter, pop_in
 
 from . import __version__, github, installed as inst, platform
 from .catalog import Catalog, Entry, load, refetch, search
 from .installer import Method, best, rank, run_stream
+from .paths import StoreDirs
 
-DIRS = AppDirs("tuistore")
+DIRS = StoreDirs()
 
 # language → truecolor dot (data color: stays truecolor in every theme)
 LANG_COLOR = {
