@@ -19,3 +19,6 @@ uv.lock
 
 # os
 .DS_Store
+
+# local assistant tooling (not part of the project)
+.claude/
