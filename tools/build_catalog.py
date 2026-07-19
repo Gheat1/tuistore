@@ -102,6 +102,15 @@ FEATURED = [
                   "git clone https://github.com/NolanCotter/mcserver-setup && cd mcserver-setup && cargo run --release",
                   "official")],
     ),
+    dict(
+        name="cwal", url="https://github.com/nitinbhat972/cwal",
+        category="CLI Tools", language="C",
+        description="A blazing-fast pywal-like color palette generator, written in C.",
+        author_note="by @nitinbhat972 · pywal's speed problem, solved in C",
+        methods=[("brew", "brew tap nitinbhat972/cwal && brew install cwal", "official"),
+                 ("yay", "yay -S cwal-git", "official"),
+                 ("nix", "nix profile install nixpkgs#cwal", "official")],
+    ),
 ]
 
 # ── popular terminal apps beyond awesome-tuis ────────────────────────────────
