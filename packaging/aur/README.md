@@ -1,7 +1,9 @@
 # AUR packaging
 
+Live at [aur.archlinux.org/packages/tuistore](https://aur.archlinux.org/packages/tuistore) — `yay -S tuistore` / `paru -S tuistore`.
+
 `PKGBUILD` here is kept as the source of truth for the `tuistore` AUR
-package. It's not auto-published — AUR submissions are a `git push` to a
+package. It's not auto-published — updates are a `git push` to a
 separate, AUR-hosted repo tied to a maintainer's own AUR account
 (`ssh://aur@aur.archlinux.org/tuistore.git`), so updating the live AUR
 package after a change here is a manual step:
@@ -23,4 +25,4 @@ then repeat the steps above.
 
 Like the [Homebrew tap](https://github.com/Gheat1/homebrew-tuistore), this
 installs tuistore + [ricekit](https://github.com/Gheat1/ricekit) into a
-private venv via `uv`, since ricekit isn't packaged for Arch or PyPI.
+private venv via `uv`, since neither is packaged for Arch.

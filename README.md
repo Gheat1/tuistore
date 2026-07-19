@@ -75,8 +75,11 @@ uv tool install git+https://github.com/Gheat1/tuistore
 pipx install git+https://github.com/Gheat1/tuistore
 ```
 
-**Arch Linux (AUR):** coming soon — package definition is ready in
-[`packaging/aur/`](packaging/aur/), pending submission.
+**Arch Linux (AUR):**
+
+```sh
+yay -S tuistore     # or paru, or any other AUR helper
+```
 
 Then just run:
 
