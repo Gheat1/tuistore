@@ -1,5 +1,13 @@
 # changelog
 
+## 0.4.2
+
+- Published to PyPI: `pip install tuistore` / `uv tool install tuistore` /
+  `pipx install tuistore` — no git URL needed. Required publishing
+  [ricekit](https://pypi.org/project/ricekit/) to PyPI first (PyPI rejects
+  packages with a direct git dependency) and switching tuistore's
+  dependency to a normal version pin.
+
 ## 0.4.1
 
 - Easier installs: a one-line installer script
