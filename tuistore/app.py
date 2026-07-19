@@ -225,14 +225,19 @@ class InstallModal(ModalScreen):
         opts = []
         env = self.app.env
         for i, m in enumerate([self.method] + self.alternatives):
+            # Dim text explains why a method cannot run, but styling alone does
+            # not stop Textual from highlighting and selecting the row.
+            available = m.available(env)
             row = Text()
             row.append("● " if i == 0 else "○ ",
-                       style=palette.blue if m.available(env) else palette.faint)
-            row.append(f"{m.label}  ", style=palette.text if m.available(env) else palette.dim)
+                       style=palette.blue if available else palette.faint)
+            row.append(f"{m.label}  ", style=palette.text if available else palette.dim)
             row.append(m.command, style=palette.dim)
-            if not m.available(env):
+            if not available:
                 row.append(f"  ({m.why_unavailable(env)})", style=palette.peach)
-            opts.append(Option(row, id=str(i)))
+            # Textual's native disabled state blocks both keyboard and mouse
+            # selection while preserving the unavailable method as guidance.
+            opts.append(Option(row, id=str(i), disabled=not available))
 
         def picked(idx: str | None) -> None:
             if idx is None:
@@ -249,6 +254,13 @@ class InstallModal(ModalScreen):
             self.dismiss(None)
             return
         if self.running:
+            return
+        # The selected method may predate an environment change or arrive from
+        # another caller, so the picker cannot be the only safety boundary.
+        if not self.method.available(self.app.env):
+            # Keep Enter harmless and explain exactly what the user must install
+            # instead of starting a command that is guaranteed to fail.
+            self.app.notify(self.method.why_unavailable(self.app.env), severity="warning")
             return
         self.running = True
         self.query_one("#log").add_class("on")
