@@ -249,7 +249,7 @@ _CLASSIFY = [
     ("docker", re.compile(r"\bdocker\s+(?:run|pull)\b")),
     ("podman", re.compile(r"\bpodman\s+(?:run|pull)\b")),
     ("scoop", re.compile(r"\bscoop\s+install\b")),
-    ("choco", re.compile(r"\bchoco(?:co)?\s+install\b")),
+    ("choco", re.compile(r"\bchoco(?:latey)?\s+install\b")),
     ("winget", re.compile(r"\bwinget\s+install\b")),
     # remote install scripts: POSIX curl|sh and PowerShell iwr|iex
     ("script", re.compile(r"\bcurl\b.*\|\s*(?:sudo\s+)?(?:sh|bash)\b|\bwget\b.*\|\s*(?:sh|bash)\b")),

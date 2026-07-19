@@ -19,6 +19,7 @@ Built on [🍚 ricekit](https://github.com/Gheat1/ricekit) · seeded from
 [![release](https://img.shields.io/github/v/release/Gheat1/tuistore?label=release&color=a6e3a1)](https://github.com/Gheat1/tuistore/releases)
 ![python](https://img.shields.io/badge/python-3.11+-4b8bbe)
 ![license](https://img.shields.io/badge/license-GPLv3-a6e3a1)
+[![homebrew](https://img.shields.io/badge/homebrew-gheat1%2Ftuistore-fbb040)](https://github.com/Gheat1/homebrew-tuistore)
 ![tools](https://img.shields.io/badge/catalog-740+_apps-fab387)
 ![built on](https://img.shields.io/badge/built_on-ricekit-cba6f7)
 
@@ -46,10 +47,38 @@ tuistore fixes both. It's a fast, mouse-and-keyboard TUI that:
 
 ## install
 
+**One-liner** (picks the best of uv / pipx / pip automatically, installs uv
+first if none are found):
+
 ```sh
-uv tool install git+https://github.com/Gheat1/tuistore   # recommended
-# or
+curl -fsSL https://raw.githubusercontent.com/Gheat1/tuistore/main/install.sh | sh
+```
+
+**Homebrew:**
+
+```sh
+brew install gheat1/tuistore/tuistore
+```
+
+**Or straight from PyPI:**
+
+```sh
+uv tool install tuistore     # recommended
+pipx install tuistore
+pip install tuistore
+```
+
+**Latest `main` instead of the last release:**
+
+```sh
+uv tool install git+https://github.com/Gheat1/tuistore
 pipx install git+https://github.com/Gheat1/tuistore
+```
+
+**Arch Linux (AUR):**
+
+```sh
+yay -S tuistore     # or paru, or any other AUR helper
 ```
 
 Windows is supported in PowerShell (or Windows Terminal) too. Install any of

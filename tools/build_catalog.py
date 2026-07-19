@@ -163,6 +163,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("fx", "https://github.com/antonmedv/fx", "CLI Tools"),
     ("gron", "https://github.com/tomnomnom/gron", "CLI Tools"),
     ("jless", "https://github.com/PaulJuliusMartinez/jless", "CLI Tools"),
+    ("fetchwatch", "https://github.com/zsubzwary/fetchwatch", "CLI Tools"),
     ("tldr", "https://github.com/tldr-pages/tldr", "CLI Tools"),
     ("tealdeer", "https://github.com/dbrgn/tealdeer", "CLI Tools"),
     ("cheat", "https://github.com/cheat/cheat", "CLI Tools"),
@@ -232,6 +233,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("broot", "https://github.com/Canop/broot", "File Managers"),
     # Multimedia
     ("ncspot", "https://github.com/hrkfdn/ncspot", "Multimedia"),
+    ("cliamp", "https://github.com/bjarneo/cliamp", "Multimedia"),
     ("musikcube", "https://github.com/clangen/musikcube", "Multimedia"),
     ("termusic", "https://github.com/tramhao/termusic", "Multimedia"),
     ("spotify-player", "https://github.com/aome510/spotify-player", "Multimedia"),

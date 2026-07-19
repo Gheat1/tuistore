@@ -1,5 +1,33 @@
 # changelog
 
+## 0.4.3
+
+- Now that tuistore is genuinely on PyPI, `tuistore update` / the manage
+  menu's "update tuistore" detect whether the running copy actually came
+  from PyPI or from a git install (via its own `direct_url.json`) and match
+  it: a PyPI install gets a normal, version-gated `upgrade`; a git install
+  still force-refreshes to the latest commit. Previously both always force-
+  reinstalled from git `main`, which would have silently converted a
+  PyPI-tracked install into a git-tracked one.
+
+## 0.4.2
+
+- Published to PyPI: `pip install tuistore` / `uv tool install tuistore` /
+  `pipx install tuistore` — no git URL needed. Required publishing
+  [ricekit](https://pypi.org/project/ricekit/) to PyPI first (PyPI rejects
+  packages with a direct git dependency) and switching tuistore's
+  dependency to a normal version pin.
+
+## 0.4.1
+
+- Easier installs: a one-line installer script
+  (`curl -fsSL .../install.sh | sh`, picks the best of uv/pipx/pip and
+  installs uv first if none are found) and a real Homebrew tap
+  (`brew install gheat1/tuistore/tuistore`).
+- `tuistore update` / the manage menu's "update tuistore" now detect a
+  Homebrew-installed copy and run `brew upgrade` instead of creating a
+  second, parallel uv/pipx-managed install alongside it.
+
 ## 0.4.0
 
 - Fixed `cargo install --git <url> --branch/--tag/--rev/--locked` package

@@ -1,7 +1,7 @@
 import os
 import tempfile
 import unittest
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from unittest import mock
 
 from tuistore import installed, paths, shell
@@ -10,31 +10,32 @@ from tuistore.platform import Env
 
 
 class TestPaths(unittest.TestCase):
-    @mock.patch("tuistore.paths.os.name", "nt")
-    @mock.patch.dict(os.environ, {"LOCALAPPDATA": r"C:\Users\Test\AppData\Local"}, clear=True)
-    def test_user_data_dir_uses_localappdata(self):
-        self.assertEqual(paths.user_data_dir(), Path(r"C:\Users\Test\AppData\Local\tuistore"))
+    WINDOWS_LOCAL_APP_DATA = PureWindowsPath(r"C:\Users\Test\AppData\Local")
 
-    @mock.patch("tuistore.paths.os.name", "nt")
+    @mock.patch("tuistore.paths._is_windows", return_value=True)
+    @mock.patch("tuistore.paths._windows_local_dir", return_value=WINDOWS_LOCAL_APP_DATA)
+    def test_user_data_dir_uses_localappdata(self, _local_dir, _is_windows):
+        self.assertEqual(paths.user_data_dir(), self.WINDOWS_LOCAL_APP_DATA / "tuistore")
+
     @mock.patch.dict(os.environ, {}, clear=True)
-    @mock.patch("pathlib.Path.home", return_value=Path(r"C:\Users\Test"))
+    @mock.patch("tuistore.paths.Path.home", return_value=PureWindowsPath(r"C:\Users\Test"))
     def test_user_data_dir_falls_back_to_home_appdata(self, _home):
-        self.assertEqual(paths.user_data_dir(), Path(r"C:\Users\Test\AppData\Local\tuistore"))
+        self.assertEqual(paths._windows_local_dir(), self.WINDOWS_LOCAL_APP_DATA)
 
-    @mock.patch("tuistore.paths.os.name", "nt")
-    @mock.patch.dict(os.environ, {"LOCALAPPDATA": r"C:\Users\Test\AppData\Local"}, clear=True)
-    def test_user_cache_dir_uses_localappdata(self):
-        self.assertEqual(paths.user_cache_dir(), Path(r"C:\Users\Test\AppData\Local\tuistore\cache"))
+    @mock.patch("tuistore.paths._is_windows", return_value=True)
+    @mock.patch("tuistore.paths._windows_local_dir", return_value=WINDOWS_LOCAL_APP_DATA)
+    def test_user_cache_dir_uses_localappdata(self, _local_dir, _is_windows):
+        self.assertEqual(paths.user_cache_dir(), self.WINDOWS_LOCAL_APP_DATA / "tuistore" / "cache")
 
-    @mock.patch("tuistore.paths.os.name", "posix")
+    @mock.patch("tuistore.paths._is_windows", return_value=False)
     @mock.patch("pathlib.Path.home", return_value=Path("/home/test"))
-    def test_user_data_dir_uses_xdg_on_unix(self, _home):
-        self.assertTrue(str(paths.user_data_dir()).replace("\\", "/").endswith("/home/test/.local/state/tuistore"))
+    def test_user_data_dir_uses_xdg_on_unix(self, _home, _is_windows):
+        self.assertEqual(paths.user_data_dir(), Path("/home/test/.local/state/tuistore"))
 
-    @mock.patch("tuistore.paths.os.name", "posix")
+    @mock.patch("tuistore.paths._is_windows", return_value=False)
     @mock.patch("pathlib.Path.home", return_value=Path("/home/test"))
-    def test_user_cache_dir_uses_xdg_cache_on_unix(self, _home):
-        self.assertTrue(str(paths.user_cache_dir()).replace("\\", "/").endswith("/home/test/.cache/tuistore"))
+    def test_user_cache_dir_uses_xdg_cache_on_unix(self, _home, _is_windows):
+        self.assertEqual(paths.user_cache_dir(), Path("/home/test/.cache/tuistore"))
 
     def test_store_dirs_persists_utf8_state_and_cache(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -106,6 +107,10 @@ class TestWindowsInstallEngine(unittest.TestCase):
             method = make(kind, command)
             self.assertTrue(method.available(self.env))
             self.assertFalse(method.available(Env("linux", "ubuntu", {"debian"}, tools={kind})))
+
+    def test_chocolatey_install_alias_is_classified(self):
+        from tuistore.installer import classify
+        self.assertEqual(classify("chocolatey install ripgrep"), "choco")
 
     def test_posix_scripts_are_not_offered_on_windows(self):
         method = make("script", "curl -fsSL https://example.test/install | bash")

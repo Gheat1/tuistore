@@ -304,16 +304,65 @@ def _cmd_info(args: list[str]) -> int:
 _SELF_SRC = "git+https://github.com/Gheat1/tuistore"
 
 
+def _how_installed() -> str:
+    """Guess which manager owns the running `tuistore`, from its resolved
+    binary path — so self-update doesn't create a second, parallel copy
+    alongside the one the user actually manages."""
+    path = shutil.which("tuistore") or ""
+    try:
+        path = str(__import__("pathlib").Path(path).resolve())
+    except OSError:
+        pass
+    low = path.lower()
+    if "cellar" in low or "linuxbrew" in low:
+        return "brew"
+    if "/uv/tools/" in low or "\\uv\\tools\\" in low:
+        return "uv"
+    if "pipx" in low:
+        return "pipx"
+    return "unknown"
+
+
+def _install_source() -> str:
+    """'git' or 'pypi' — which this specific installed copy actually came
+    from, via its own dist-info (a direct_url.json with vcs_info means git;
+    its absence means a normal registry install). Distinct from
+    `_how_installed()` (which *manager* owns it): a uv-tool install can be
+    sourced from either PyPI or git, and self-update must match — reinstalling
+    a PyPI install from git's HEAD would silently jump it ahead of releases."""
+    import glob
+    import json
+    import site
+
+    for sp in site.getsitepackages() + [site.getusersitepackages()]:
+        for d in glob.glob(f"{sp}/tuistore-*.dist-info"):
+            try:
+                with open(f"{d}/direct_url.json") as f:
+                    data = json.load(f)
+                return "git" if data.get("vcs_info", {}).get("vcs") == "git" else "pypi"
+            except FileNotFoundError:
+                return "pypi"
+    return "pypi"  # default to the safer, version-gated upgrade path
+
+
 def _update_self() -> int:
-    # force + refresh so it pulls the latest commit even when the version
-    # string hasn't changed (a plain `uv tool upgrade` is version-gated and
-    # no-ops on same-version updates).
+    how = _how_installed()
+    if how == "brew":
+        print("installed via Homebrew — updating with brew instead:")
+        return _run("brew upgrade gheat1/tuistore/tuistore")
+    src = _SELF_SRC if _install_source() == "git" else "tuistore"
+    force = "--force --refresh " if src == _SELF_SRC else ""
+    # a git install needs --force --refresh to pull the latest commit even
+    # when the version string hasn't changed (uv/pipx upgrades are otherwise
+    # version-gated); a PyPI install should use the normal, version-gated
+    # upgrade so it never jumps ahead of an actual release.
     if shutil.which("uv"):
-        return _run(f"uv tool install --force --refresh {_SELF_SRC}")
+        verb = "install" if src == _SELF_SRC else "upgrade"
+        return _run(f"uv tool {verb} {force}{src}".strip())
     if shutil.which("pipx"):
-        return _run(f"pipx install --force {_SELF_SRC}")
-    print(f"couldn't find uv or pipx — reinstall with:\n"
-          f"  uv tool install --force --refresh {_SELF_SRC}")
+        verb = "install --force" if src == _SELF_SRC else "upgrade"
+        return _run(f"pipx {verb} {src}")
+    print(f"couldn't find uv or pipx — reinstall with:\n  uv tool install {force}{src}".strip())
     return 1
 
 

@@ -1,15 +1,17 @@
-"""Cross-platform paths for tuistore data.
+r"""Cross-platform paths for tuistore data.
 
 On Windows we use %LOCALAPPDATA%\tuistore (the standard roaming-free app-data
 spot). On Unix we keep the existing XDG-style ~/.local/state/tuistore and
 ~/.cache/tuistore locations so existing users are unaffected.
 """
 
-from __future__ import annotations
-
-import os
 import json
+import os
 from pathlib import Path
+
+
+def _is_windows() -> bool:
+    return os.name == "nt"
 
 
 def _windows_local_dir() -> Path:
@@ -18,14 +20,14 @@ def _windows_local_dir() -> Path:
 
 def user_data_dir() -> Path:
     """Directory for persistent state (ledger, catalog)."""
-    if os.name == "nt":
+    if _is_windows():
         return _windows_local_dir() / "tuistore"
     return Path.home() / ".local/state/tuistore"
 
 
 def user_cache_dir() -> Path:
     """Directory for cached data (scraped READMEs)."""
-    if os.name == "nt":
+    if _is_windows():
         return _windows_local_dir() / "tuistore" / "cache"
     return Path.home() / ".cache/tuistore"
 
