@@ -1,6 +1,6 @@
 # Maintainer: Gheat <admin@gheat.net>
 pkgname=tuistore
-pkgver=0.4.1
+pkgver=0.4.3
 pkgrel=1
 pkgdesc="TUI app store — browse, search, and one-key-install terminal apps"
 arch=('any')
@@ -9,11 +9,11 @@ license=('GPL-3.0-or-later')
 depends=('python')
 makedepends=('uv')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/Gheat1/tuistore/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('827b68799b90536bf12b6e998ccf31eb0f56c8f57cf89eef0adf98a5db3ec464')
+sha256sums=('b2be71b0c34b8a3b3dd569a48c5b4f968c0d932aa0aaf01a33c8b3e37b75012b')
 
-# tuistore depends on ricekit (github.com/Gheat1/ricekit), which isn't
-# packaged for Arch or PyPI — a private venv is the simplest correct way to
-# satisfy that without vendoring or re-packaging ricekit separately.
+# tuistore and ricekit are both on PyPI now, but neither is packaged for
+# Arch — a private venv is the simplest correct way to satisfy the
+# dependency without re-packaging ricekit separately.
 package() {
     cd "$pkgname-$pkgver"
 
