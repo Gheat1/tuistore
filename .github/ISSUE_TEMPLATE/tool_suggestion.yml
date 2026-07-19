@@ -1,0 +1,17 @@
+name: Suggest a tool
+description: A terminal app that should be in the catalog
+labels: [catalog, enhancement]
+body:
+  - type: input
+    id: repo
+    attributes:
+      label: GitHub repo URL
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it's worth adding
+      description: A sentence or two on what it does.
+    validations:
+      required: false

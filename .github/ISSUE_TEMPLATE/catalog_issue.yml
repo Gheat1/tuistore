@@ -1,0 +1,24 @@
+name: Catalog install problem
+description: A tool's install/update/uninstall command is wrong, broken, or missing
+labels: [catalog]
+body:
+  - type: input
+    id: tool
+    attributes:
+      label: Tool name or repo URL
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong?
+      description: The exact command tuistore chose, what happened when you ran it, and what it should be instead if you know.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS / distro
+      placeholder: "macOS 15, Arch Linux, Ubuntu 24.04, …"
+    validations:
+      required: true

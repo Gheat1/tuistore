@@ -1,0 +1,31 @@
+name: Bug report
+description: Something in tuistore itself is broken
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS / distro
+      placeholder: "macOS 15, Arch Linux, Ubuntu 24.04, …"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: tuistore version
+      description: Output of `tuistore --version`
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: tuistore --doctor output
+      description: Optional, but helpful for install-engine issues.
+      render: text

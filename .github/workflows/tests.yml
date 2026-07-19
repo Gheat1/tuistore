@@ -1,0 +1,46 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install tuistore
+        run: uv sync --python ${{ matrix.python-version }}
+
+      - name: Run tests
+        run: uv run --python ${{ matrix.python-version }} python -m unittest discover tests -v
+
+      - name: Import sanity check
+        run: |
+          uv run --python ${{ matrix.python-version }} python -c "
+          import tuistore.app, tuistore.__main__, tuistore.installed, tuistore.catalog, tuistore.installer, tuistore.scrape, tuistore.github, tuistore.platform
+          print('all modules import cleanly')
+          "
+
+      - name: Catalog loads and is well-formed
+        run: |
+          uv run --python ${{ matrix.python-version }} python -c "
+          from tuistore.catalog import load
+          cat = load()
+          assert len(cat.entries) > 100, f'suspiciously small catalog: {len(cat.entries)}'
+          slugs = [e.slug for e in cat.entries]
+          assert len(slugs) == len(set(slugs)), 'duplicate slugs in catalog'
+          print(f'{len(cat.entries)} tools, all slugs unique')
+          "
