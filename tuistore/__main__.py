@@ -300,7 +300,30 @@ def _cmd_info(args: list[str]) -> int:
 _SELF_SRC = "git+https://github.com/Gheat1/tuistore"
 
 
+def _how_installed() -> str:
+    """Guess which manager owns the running `tuistore`, from its resolved
+    binary path — so self-update doesn't create a second, parallel copy
+    alongside the one the user actually manages."""
+    path = shutil.which("tuistore") or ""
+    try:
+        path = str(__import__("pathlib").Path(path).resolve())
+    except OSError:
+        pass
+    low = path.lower()
+    if "cellar" in low or "linuxbrew" in low:
+        return "brew"
+    if "/uv/tools/" in low or "\\uv\\tools\\" in low:
+        return "uv"
+    if "pipx" in low:
+        return "pipx"
+    return "unknown"
+
+
 def _update_self() -> int:
+    how = _how_installed()
+    if how == "brew":
+        print("installed via Homebrew — updating with brew instead:")
+        return _run("brew upgrade gheat1/tuistore/tuistore")
     # force + refresh so it pulls the latest commit even when the version
     # string hasn't changed (a plain `uv tool upgrade` is version-gated and
     # no-ops on same-version updates).

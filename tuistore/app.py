@@ -1519,6 +1519,21 @@ class StoreApp(KitApp):
         self.push_screen(ManageModal())
 
     def action_update_self(self) -> None:
+        # if this copy was installed via brew, update through brew instead of
+        # creating a second, parallel uv/pipx-managed copy alongside it
+        import shutil as _shutil
+        from pathlib import Path as _Path
+        resolved = _shutil.which("tuistore") or ""
+        try:
+            resolved = str(_Path(resolved).resolve())
+        except OSError:
+            pass
+        if "cellar" in resolved.lower() or "linuxbrew" in resolved.lower():
+            self.push_screen(RunModal(
+                f"{icons.REFRESH} update tuistore", "brew upgrade gheat1/tuistore/tuistore",
+                subtitle="installed via Homebrew — updating with brew instead",
+                verb="update"))
+            return
         # force + refresh: a plain upgrade is version-gated and no-ops when the
         # version string is unchanged; this always pulls the latest commit
         src = "git+https://github.com/Gheat1/tuistore"

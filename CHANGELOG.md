@@ -1,5 +1,15 @@
 # changelog
 
+## 0.4.1
+
+- Easier installs: a one-line installer script
+  (`curl -fsSL .../install.sh | sh`, picks the best of uv/pipx/pip and
+  installs uv first if none are found) and a real Homebrew tap
+  (`brew install gheat1/tuistore/tuistore`).
+- `tuistore update` / the manage menu's "update tuistore" now detect a
+  Homebrew-installed copy and run `brew upgrade` instead of creating a
+  second, parallel uv/pipx-managed install alongside it.
+
 ## 0.4.0
 
 - Fixed `cargo install --git <url> --branch/--tag/--rev/--locked` package
