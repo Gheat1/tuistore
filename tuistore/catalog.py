@@ -190,7 +190,7 @@ CATALOG_URL = (
 
 def _bundled_text() -> str | None:
     try:
-        return resources.files("tuistore.data").joinpath("catalog.json").read_text()
+        return resources.files("tuistore.data").joinpath("catalog.json").read_text(encoding="utf-8")
     except (FileNotFoundError, ModuleNotFoundError, OSError):
         return None
 
@@ -272,7 +272,7 @@ def load() -> Catalog:
     user = None
     try:
         if USER_CATALOG.exists():
-            user = USER_CATALOG.read_text()
+            user = USER_CATALOG.read_text(encoding="utf-8")
     except OSError:
         user = None
 
@@ -323,5 +323,5 @@ def _dedupe(entries: list[Entry]) -> list[Entry]:
 
 
 def load_from(path) -> Catalog:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return _parse(f.read())
