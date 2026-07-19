@@ -693,8 +693,6 @@ class ManageModal(ModalScreen):
 # the rest of Gheat's suite (tuistore is offered on its own button)
 SUITE_REPOS = [
     ("runpantheon", "ltui"),
-    ("Gheat1", "jtui"),
-    ("Gheat1", "sctui"),
     ("Gheat1", "NaviTui"),
     ("Gheat1", "ricekit"),
 ]

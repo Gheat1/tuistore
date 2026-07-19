@@ -160,10 +160,9 @@ and is recorded in the same ledger — so `tuistore installed`, `update`,
 
 ## the catalog
 
-- **★ Featured — the suite.** [ltui](https://github.com/runpantheon/ltui),
-  [jtui](https://github.com/Gheat1/jtui), [sctui](https://github.com/Gheat1/sctui),
-  [NaviTui](https://github.com/Gheat1/NaviTui), and
-  [ricekit](https://github.com/Gheat1/ricekit) — pinned to the top.
+- **★ Featured.** Gheat's suite — [ltui](https://github.com/runpantheon/ltui),
+  [NaviTui](https://github.com/Gheat1/NaviTui), [ricekit](https://github.com/Gheat1/ricekit)
+  — plus a few hand-picked community tools, all pinned to the top.
 - **740+ tools** — [rothgar/awesome-tuis](https://github.com/rothgar/awesome-tuis)
   plus a curated set of terminal essentials (the fetchers, editors, and modern
   CLI utilities people actually `brew install`), in browsable categories, each

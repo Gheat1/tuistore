@@ -45,20 +45,6 @@ FEATURED = [
                  ("uv", "uv tool install git+https://github.com/runpantheon/ltui", "official")],
     ),
     dict(
-        name="jtui", url="https://github.com/Gheat1/jtui",
-        category="Productivity", language="Python",
-        description="A fast, beautiful TUI for Jira — status-grouped tickets, instant startup, full keyboard + mouse control.",
-        author_note="by Gheat · Jira, done right in the terminal",
-        methods=[("uv", "uv tool install git+https://github.com/Gheat1/jtui", "official")],
-    ),
-    dict(
-        name="sctui", url="https://github.com/Gheat1/sctui",
-        category="Productivity", language="Python",
-        description="A fast, beautiful TUI for Shortcut — status-grouped stories, instant startup, full keyboard + mouse control.",
-        author_note="by Gheat · Shortcut stories at terminal speed",
-        methods=[("uv", "uv tool install git+https://github.com/Gheat1/sctui", "official")],
-    ),
-    dict(
         name="NaviTui", url="https://github.com/Gheat1/NaviTui",
         category="Multimedia", language="Python",
         description="An animated TUI player for Navidrome — cover art in the terminal, playback via mpv, themes via ricekit.",

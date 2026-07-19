@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-07-19T02:07:17Z",
+ "generated_at": "2026-07-19T02:10:08Z",
  "source": "awesome-tuis (rothgar/awesome-tuis) + modern terminal essentials + Gheat suite",
- "count": 749,
+ "count": 747,
  "entries": [
   {
    "name": "ltui",
@@ -26,50 +26,6 @@
     {
      "kind": "uv",
      "command": "uv tool install git+https://github.com/runpantheon/ltui",
-     "source": "official",
-     "requires": [
-      "uv"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "jtui",
-   "url": "https://github.com/Gheat1/jtui",
-   "category": "Productivity",
-   "language": "Python",
-   "description": "A fast, beautiful TUI for Jira — status-grouped tickets, instant startup, full keyboard + mouse control.",
-   "author_note": "by Gheat · Jira, done right in the terminal",
-   "featured": true,
-   "stars": 8,
-   "archived": true,
-   "pushed_at": "2026-07-10T00:11:08Z",
-   "methods": [
-    {
-     "kind": "uv",
-     "command": "uv tool install git+https://github.com/Gheat1/jtui",
-     "source": "official",
-     "requires": [
-      "uv"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "sctui",
-   "url": "https://github.com/Gheat1/sctui",
-   "category": "Productivity",
-   "language": "Python",
-   "description": "A fast, beautiful TUI for Shortcut — status-grouped stories, instant startup, full keyboard + mouse control.",
-   "author_note": "by Gheat · Shortcut stories at terminal speed",
-   "featured": true,
-   "stars": 2,
-   "archived": true,
-   "pushed_at": "2026-07-10T00:11:11Z",
-   "methods": [
-    {
-     "kind": "uv",
-     "command": "uv tool install git+https://github.com/Gheat1/sctui",
      "source": "official",
      "requires": [
       "uv"
@@ -267,7 +223,7 @@
    "url": "https://github.com/sst/opencode",
    "description": "AI coding agent, built for the terminal",
    "category": "Development",
-   "stars": 187244,
+   "stars": 187245,
    "language": "TypeScript",
    "archived": false,
    "pushed_at": "2026-07-19T01:52:46Z",
@@ -449,7 +405,7 @@
    "url": "https://github.com/neovim/neovim",
    "description": "Vim-fork focused on extensibility and usability",
    "category": "Editors",
-   "stars": 101235,
+   "stars": 101236,
    "language": "Vim Script",
    "archived": false,
    "pushed_at": "2026-07-19T02:04:06Z",
@@ -2067,7 +2023,7 @@
    "url": "https://github.com/nushell/nushell",
    "description": "A new type of shell",
    "category": "Shell & Prompt",
-   "stars": 40044,
+   "stars": 40045,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-18T22:18:52Z",
