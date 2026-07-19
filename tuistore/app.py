@@ -1519,28 +1519,27 @@ class StoreApp(KitApp):
         self.push_screen(ManageModal())
 
     def action_update_self(self) -> None:
+        from .__main__ import _how_installed, _install_source, _SELF_SRC
+
         # if this copy was installed via brew, update through brew instead of
         # creating a second, parallel uv/pipx-managed copy alongside it
-        import shutil as _shutil
-        from pathlib import Path as _Path
-        resolved = _shutil.which("tuistore") or ""
-        try:
-            resolved = str(_Path(resolved).resolve())
-        except OSError:
-            pass
-        if "cellar" in resolved.lower() or "linuxbrew" in resolved.lower():
+        if _how_installed() == "brew":
             self.push_screen(RunModal(
                 f"{icons.REFRESH} update tuistore", "brew upgrade gheat1/tuistore/tuistore",
                 subtitle="installed via Homebrew — updating with brew instead",
                 verb="update"))
             return
-        # force + refresh: a plain upgrade is version-gated and no-ops when the
-        # version string is unchanged; this always pulls the latest commit
-        src = "git+https://github.com/Gheat1/tuistore"
+
+        # a git-sourced install needs --force --refresh to pull the latest
+        # commit (a plain upgrade is version-gated); a PyPI-sourced install
+        # should use the normal version-gated upgrade so it never silently
+        # jumps ahead of an actual release onto git's HEAD.
+        from_git = _install_source() == "git"
+        src = _SELF_SRC if from_git else "tuistore"
         if self.env.has("uv"):
-            cmd = f"uv tool install --force --refresh {src}"
+            cmd = f"uv tool install --force --refresh {src}" if from_git else f"uv tool upgrade {src}"
         elif self.env.has("pipx"):
-            cmd = f"pipx install --force {src}"
+            cmd = f"pipx install --force {src}" if from_git else f"pipx upgrade {src}"
         else:
             self.notify("need uv or pipx to self-update", severity="warning")
             return

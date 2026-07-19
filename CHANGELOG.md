@@ -1,5 +1,15 @@
 # changelog
 
+## 0.4.3
+
+- Now that tuistore is genuinely on PyPI, `tuistore update` / the manage
+  menu's "update tuistore" detect whether the running copy actually came
+  from PyPI or from a git install (via its own `direct_url.json`) and match
+  it: a PyPI install gets a normal, version-gated `upgrade`; a git install
+  still force-refreshes to the latest commit. Previously both always force-
+  reinstalled from git `main`, which would have silently converted a
+  PyPI-tracked install into a git-tracked one.
+
 ## 0.4.2
 
 - Published to PyPI: `pip install tuistore` / `uv tool install tuistore` /
