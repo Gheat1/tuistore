@@ -81,6 +81,11 @@ pipx install git+https://github.com/Gheat1/tuistore
 yay -S tuistore     # or paru, or any other AUR helper
 ```
 
+Windows is supported in PowerShell (or Windows Terminal) too. Install any of
+the package managers and toolchains you already use — `winget`, Scoop,
+Chocolatey, `uv`, Cargo, Go, and npm are detected automatically — then run the
+same command above. Windows-specific methods are offered only on Windows.
+
 Then just run:
 
 ```sh
@@ -233,13 +238,13 @@ If you like tuistore, you'll probably like the rest of the suite:
 
 ## config & data
 
-XDG dirs, via ricekit's `AppDirs`:
+XDG-style dirs on macOS and Linux; Local AppData on Windows:
 
 | what | where |
 | --- | --- |
-| state (theme, layout) | `~/.local/state/tuistore/state.json` |
-| cache (scraped installs) | `~/.cache/tuistore/` |
-| the catalog | shipped in the package (`tuistore/data/catalog.json`) |
+| state (theme, layout) | `~/.local/state/tuistore/state.json` · `%LOCALAPPDATA%\tuistore\state.json` |
+| cache (scraped installs) | `~/.cache/tuistore/` · `%LOCALAPPDATA%\tuistore\cache\` |
+| refreshed catalog and install ledger | `~/.local/state/tuistore/` · `%LOCALAPPDATA%\tuistore\` |
 
 `tuistore --doctor` prints what your machine looks like to the install engine.
 

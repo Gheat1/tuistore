@@ -28,8 +28,12 @@ PROBE = [
     "dnf", "yum", "zypper",
     "xbps-install", "emerge", "eopkg", "apk", "pkg",
     "nix", "nix-env", "snap", "flatpak",
+    # Windows package managers
+    "scoop", "choco", "winget",
     # containers + fetchers + build
     "docker", "podman", "curl", "wget", "git", "make", "gcc", "cc",
+    # shells (used for running commands)
+    "pwsh", "powershell",
     # our own helpers
     "gh",
 ]
@@ -97,6 +101,8 @@ class Env:
             return f"macOS ({self.arch})"
         if self.os == "linux":
             return f"{self.distro or 'Linux'} ({self.arch})"
+        if self.os == "windows":
+            return f"Windows ({self.arch})"
         return self.os
 
 

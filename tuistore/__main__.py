@@ -23,14 +23,18 @@ install flags:  -y/--yes (no prompt)   -f/--force (reinstall)   --dry-run   --me
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
 
+from tuistore.shell import shell_command
+
 
 def _run(cmd: str) -> int:
     print(f"$ {cmd}")
-    return subprocess.run(["/bin/sh", "-lc", cmd]).returncode
+    shell, shell_args = shell_command()
+    return subprocess.run([shell, *shell_args, cmd]).returncode
 
 
 def _confirm(prompt: str, assume_yes: bool) -> bool:
@@ -414,6 +418,15 @@ def _list_installed() -> int:
 
 
 def main() -> None:
+    # Legacy Windows console sessions still default Python's stdio to an ANSI
+    # code page. The catalog and CLI use Unicode (stars, checkmarks, emoji),
+    # so make output deterministic regardless of the user's terminal host.
+    if os.name == "nt":
+        for stream in (sys.stdout, sys.stderr):
+            reconfigure = getattr(stream, "reconfigure", None)
+            if reconfigure:
+                reconfigure(encoding="utf-8", errors="replace")
+
     argv = sys.argv[1:]
     if not argv:
         from .app import main as run

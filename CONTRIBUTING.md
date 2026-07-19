@@ -23,7 +23,7 @@ uv run tuistore
 uv run python -m unittest discover tests -v
 ```
 
-CI runs this on Python 3.11, 3.12, and 3.13 for every PR.
+CI runs this on Ubuntu and Windows for Python 3.11, 3.12, and 3.13 on every PR.
 
 ## fixing the install engine
 

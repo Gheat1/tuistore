@@ -14,6 +14,7 @@ from functools import lru_cache
 from importlib import resources
 
 from .installer import Method, parse_repo
+from .paths import user_data_dir
 
 
 @dataclass
@@ -182,7 +183,7 @@ def search(entries: list[Entry], query: str, *, category: str | None = None,
 # reinstalling the whole package.
 from pathlib import Path  # noqa: E402
 
-USER_CATALOG = Path.home() / ".local/state/tuistore/catalog.json"
+USER_CATALOG = user_data_dir() / "catalog.json"
 CATALOG_URL = (
     "https://raw.githubusercontent.com/Gheat1/tuistore/main/tuistore/data/catalog.json"
 )
