@@ -294,10 +294,17 @@ class InstallModal(ModalScreen):
         self.done = True
         result = Text()
         if code == "0":
-            result.append(f"{icons.CHECK_CIRCLE}  installed ", style=f"bold {palette.green}")
-            result.append(self.entry.name, style=palette.text)
-            self.app.notify(f"installed {self.entry.name}", severity="information")
-            self.app.on_installed(self.entry, self.method)
+            verified = self.app.on_installed(self.entry, self.method)
+            if verified:
+                result.append(f"{icons.CHECK_CIRCLE}  installed ", style=f"bold {palette.green}")
+                result.append(self.entry.name, style=palette.text)
+                self.app.notify(f"installed {self.entry.name}", severity="information")
+            else:
+                result.append(f"{icons.WARN}  ran, but no {self.entry.name} binary showed up on PATH",
+                              style=f"bold {palette.peach}")
+                self.app.notify(
+                    f"{self.entry.name}: the command exited cleanly but nothing new landed on "
+                    f"PATH — double check it actually installed", severity="warning")
         else:
             result.append(f"{icons.CROSS_CIRCLE}  exited with code {code}", style=f"bold {palette.red}")
             self.app.notify(f"{self.entry.name} install failed (code {code})", severity="error")
@@ -927,14 +934,18 @@ class StoreApp(KitApp):
         self._bins = inst.path_binaries()
         self.scan_managers()
 
-    def on_installed(self, entry: Entry, method: Method) -> None:
-        """Called by the install modal on success — record it, refresh state."""
+    def on_installed(self, entry: Entry, method: Method) -> bool:
+        """Called by the install modal on a successful (exit 0) install —
+        records it, refreshes state, and returns whether a real binary
+        actually landed on PATH (a command can exit 0 without installing
+        anything persistent, e.g. `cargo run` in a fresh clone)."""
         inst.record_install(entry.slug, entry.name, method)
         self._reload_installed()
         if self.current is entry:
             self.render_detail(entry)
         self.render_results(preserve=True)
         self._build_sidebar()
+        return inst.verify_landed(entry.name, entry.methods)
 
     # ── compose ────────────────────────────────────────────────────────
     class _Search(Input):

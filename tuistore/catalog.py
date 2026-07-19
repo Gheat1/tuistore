@@ -220,11 +220,44 @@ def _prefer_uv(entry: Entry) -> None:
                                  source=best_src, note="python tool"))
 
 
+# ── known-incompatible package/runtime combos ────────────────────────────────
+# A handful of catalog packages install cleanly but crash at runtime with an
+# otherwise-correct choice of manager — usually an unmaintained package that
+# hard-depends on something a later language runtime removed. Rather than
+# guess generically, the exact fix is pinned per package as reports come in.
+# Keyed by "owner/repo" slug -> {kind: replacement command}. Applied AFTER
+# _prefer_uv, since that unconditionally regenerates the uv method's command
+# and would otherwise clobber any fix baked in earlier.
+QUIRKS: dict[str, dict[str, str]] = {
+    # thefuck 3.32 imports distutils, removed from the stdlib in Python 3.12
+    # (see PEP 632, verified empirically: present on 3.11, gone on 3.12+).
+    # uv resolves the newest available interpreter by default, so
+    # `uv tool install thefuck` installs cleanly but crashes on first run
+    # with "ModuleNotFoundError: No module named 'distutils'". Pinning uv to
+    # 3.11 (the last version that still ships distutils) keeps uv as the
+    # installer while sidestepping the incompatibility.
+    # reported: https://github.com/Gheat1/tuistore/issues/3
+    "nvbn/thefuck": {"uv": "uv tool install --python 3.11 thefuck"},
+}
+
+
+def _apply_quirks(entry: Entry) -> None:
+    fixes = QUIRKS.get(entry.slug)
+    if not fixes:
+        return
+    for m in entry.methods:
+        replacement = fixes.get(m.kind)
+        if replacement and m.command != replacement:
+            m.command = replacement
+            m.note = (m.note + " " if m.note else "") + "(pinned: known runtime incompatibility)"
+
+
 def _parse(raw: str) -> Catalog:
     data = json.loads(raw)
     entries = _dedupe([Entry.from_dict(e) for e in data.get("entries", [])])
     for e in entries:
         _prefer_uv(e)
+        _apply_quirks(e)
     return Catalog(
         entries=entries,
         generated_at=data.get("generated_at", ""),

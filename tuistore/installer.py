@@ -103,12 +103,14 @@ class Method:
     def score(self, env: Env) -> tuple:
         pref = KINDS.get(self.kind, {}).get("pref", 60)
         src = _SOURCE_RANK.get(self.source, 2)
-        # uv is the preferred installer for a python CLI — rank it in the
-        # trusted tier so it's the default whenever it's runnable. Its honest
-        # verified/unverified label (`.trust`) is unchanged, so the install
-        # screen still warns when the package name is only a guess.
-        if self.kind == "uv":
-            src = 0
+        # uv is the preferred installer for a python CLI, but ONLY within its
+        # honest trust tier — catalog._prefer_uv() already promotes uv's
+        # source to match the best pip/pipx/uv line a project's own README
+        # documents, so a verified uv method naturally wins ties via `pref`
+        # below. A uv method that's still a pure guess (no readme/official
+        # backing at all) must NOT be force-ranked ahead of a genuinely
+        # documented alternative — that inverts "verified before guessed",
+        # the one rule the whole install engine exists to enforce.
         # available first, then verified-before-guessed, then niceness of kind
         return (0 if self.available(env) else 1, src, pref)
 

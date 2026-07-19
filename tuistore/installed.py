@@ -211,6 +211,21 @@ def candidate_bins(name: str, methods: list[Method]) -> set[str]:
     return {c for c in cands if len(c) >= 2}
 
 
+def verify_landed(name: str, methods: list[Method]) -> bool:
+    """True if a real binary shows up on PATH after an install exits 0.
+
+    A command exiting 0 only means *that command* succeeded — e.g. `cargo
+    run --release` from a fresh clone exits 0 after just opening a wizard for
+    one session, leaving nothing installed (github.com/Gheat1/tuistore/issues/3).
+    This is a light, non-executing safety net: it checks the binary actually
+    resolves, it never runs the tool itself (which would risk false positives
+    on tools with no --version flag, interactive prompts, etc).
+    """
+    refresh_path()
+    bins = path_binaries()
+    return any(c in bins for c in candidate_bins(name, methods))
+
+
 def status(slug: str, name: str, methods: list[Method], ledger: dict,
            bins: frozenset[str] | None = None,
            pkgs: dict[str, set[str]] | None = None) -> str | None:

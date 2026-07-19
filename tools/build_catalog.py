@@ -98,8 +98,12 @@ FEATURED = [
         category="Games", language="Rust",
         description="A polished terminal wizard for creating a reproducible Paper Minecraft server — turns plain-language choices into ready-to-run Docker Compose or native Java server files.",
         author_note="by @NolanCotter · stand up a Minecraft server without the usual yak-shaving",
-        methods=[("source",
-                  "git clone https://github.com/NolanCotter/mcserver-setup && cd mcserver-setup && cargo run --release",
+        # `cargo run --release` from a clone only opens the wizard for that one
+        # session and leaves nothing on PATH, so tuistore recorded a phantom
+        # install (reported: github.com/Gheat1/tuistore/issues/3). `cargo
+        # install --git` puts a real `mcserver-setup` binary on PATH instead.
+        methods=[("cargo",
+                  "cargo install --git https://github.com/NolanCotter/mcserver-setup --locked",
                   "official")],
     ),
     dict(

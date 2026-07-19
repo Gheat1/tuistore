@@ -76,7 +76,7 @@ def _resolve(name: str, *, quiet: bool = False):
 def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None,
                  force: bool = False) -> int:
     from .installer import best, rank, force_variant
-    from .installed import record_install, status, load_ledger, path_binaries, scan_installed
+    from .installed import record_install, status, load_ledger, path_binaries, scan_installed, verify_landed
     from .platform import detect
 
     entry = _resolve(name)
@@ -129,7 +129,11 @@ def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None
     code = _run(cmd)
     if code == 0:
         record_install(entry.slug, entry.name, chosen)
-        print(f"✓ installed {entry.name} — manage with `tuistore update/remove {entry.name}`")
+        if verify_landed(entry.name, entry.methods):
+            print(f"✓ installed {entry.name} — manage with `tuistore update/remove {entry.name}`")
+        else:
+            print(f"⚠ {entry.name}: the command exited cleanly but no new binary showed up on "
+                  f"PATH — double check it actually installed")
     else:
         print(f"✗ {entry.name} failed (exit {code})")
     return code
