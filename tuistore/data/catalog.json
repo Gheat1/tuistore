@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-07-19T10:36:14Z",
+ "generated_at": "2026-07-19T10:52:42Z",
  "source": "awesome-tuis (rothgar/awesome-tuis) + modern terminal essentials + Gheat suite",
- "count": 753,
+ "count": 754,
  "entries": [
   {
    "name": "ltui",
@@ -160,7 +160,7 @@
    "description": "A pomodoro timer written in pure C — simple, focused, terminal-native.",
    "author_note": "by @gabrielzschmitz · a tiny pomodoro timer in pure C",
    "featured": true,
-   "stars": 433,
+   "stars": 434,
    "archived": false,
    "pushed_at": "2026-07-18T20:04:47Z",
    "methods": [
@@ -294,7 +294,7 @@
    "featured": true,
    "stars": 4,
    "archived": false,
-   "pushed_at": "2026-07-17T12:52:31Z",
+   "pushed_at": "2026-07-19T10:46:48Z",
    "homepage": "https://www.npmjs.com/package/termheat",
    "methods": [
     {
@@ -312,7 +312,7 @@
    "url": "https://github.com/sst/opencode",
    "description": "AI coding agent, built for the terminal",
    "category": "Development",
-   "stars": 187360,
+   "stars": 187366,
    "language": "TypeScript",
    "archived": false,
    "pushed_at": "2026-07-19T09:11:05Z",
@@ -427,7 +427,7 @@
    "url": "https://github.com/yt-dlp/yt-dlp",
    "description": "A feature-rich command-line audio/video downloader",
    "category": "Multimedia",
-   "stars": 178826,
+   "stars": 178828,
    "language": "Python",
    "archived": false,
    "pushed_at": "2026-07-14T14:14:21Z",
@@ -525,7 +525,7 @@
    "url": "https://github.com/openai/codex",
    "description": "Lightweight coding agent that runs in your terminal",
    "category": "Development",
-   "stars": 99532,
+   "stars": 99535,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-19T00:04:10Z",
@@ -1633,7 +1633,7 @@
    "url": "https://github.com/jesseduffield/lazydocker",
    "description": "The lazier way to manage everything docker",
    "category": "Docker/LXC/K8s",
-   "stars": 52086,
+   "stars": 52087,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-04-19T02:51:06Z",
@@ -2063,7 +2063,7 @@
    "url": "https://github.com/sxyazi/yazi",
    "description": "Blazing fast terminal file manager written in Rust, based on async I/O.",
    "category": "File Managers",
-   "stars": 40477,
+   "stars": 40480,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-16T19:22:27Z",
@@ -2115,7 +2115,7 @@
    "stars": 40046,
    "language": "Rust",
    "archived": false,
-   "pushed_at": "2026-07-18T22:18:52Z",
+   "pushed_at": "2026-07-19T10:43:15Z",
    "homepage": "https://www.nushell.sh/",
    "methods": [
     {
@@ -2427,7 +2427,7 @@
    "url": "https://github.com/schollz/croc",
    "description": "Easily and securely send things from one computer to another :crocodile: :package:",
    "category": "CLI Tools",
-   "stars": 35606,
+   "stars": 35607,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-16T08:32:50Z",
@@ -3555,7 +3555,7 @@
    "url": "https://github.com/charmbracelet/crush",
    "description": "The glamourous AI coding agent",
    "category": "Development",
-   "stars": 26619,
+   "stars": 26621,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-19T02:14:23Z",
@@ -4116,7 +4116,7 @@
    "url": "https://github.com/JanDeDobbeleer/oh-my-posh",
    "description": "The most customisable and low-latency cross platform/shell prompt renderer",
    "category": "Shell & Prompt",
-   "stars": 23077,
+   "stars": 23078,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-19T08:09:39Z",
@@ -7213,7 +7213,7 @@
    "description": "💻 C++ Functional Terminal User Interface. ❤️",
    "category": "Libraries",
    "language": "C++",
-   "stars": 10436,
+   "stars": 10437,
    "archived": false,
    "pushed_at": "2026-07-19T08:52:11Z",
    "homepage": "https://arthursonzogni.github.io/FTXUI/",
@@ -7930,7 +7930,7 @@
    "url": "https://github.com/ducaale/xh",
    "description": "Friendly and fast tool for sending HTTP requests",
    "category": "CLI Tools",
-   "stars": 7941,
+   "stars": 7942,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-17T15:11:52Z",
@@ -9732,7 +9732,7 @@
    "url": "https://github.com/achristmascarl/rainfrog",
    "description": "A database management TUI for Postgres, MySQL, and SQLite written in Rust",
    "category": "Development",
-   "stars": 5175,
+   "stars": 5176,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-11T18:20:20Z",
@@ -10163,7 +10163,7 @@
    "url": "https://github.com/Maxteabag/sqlit",
    "description": "A lightweight TUI for SQL databases inspired by lazygit",
    "category": "Development",
-   "stars": 4511,
+   "stars": 4512,
    "language": "Python",
    "archived": false,
    "pushed_at": "2026-07-14T19:03:44Z",
@@ -10779,7 +10779,7 @@
    "url": "https://github.com/adembc/lazyssh",
    "description": "TUI SSH manager to browse, connect, and manage servers from ssh config files.",
    "category": "Productivity",
-   "stars": 3786,
+   "stars": 3787,
    "language": "Go",
    "archived": false,
    "pushed_at": "2025-10-09T20:37:29Z",
@@ -13578,7 +13578,7 @@
    "url": "https://github.com/lusingander/serie",
    "description": "A rich git commit graph",
    "category": "Development",
-   "stars": 1987,
+   "stars": 1989,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-19T09:28:47Z",
@@ -13977,7 +13977,7 @@
    "url": "https://github.com/PabloLec/recoverpy",
    "description": "A TUI to recover overwritten or deleted data.",
    "category": "Miscellaneous",
-   "stars": 1777,
+   "stars": 1778,
    "language": "Python",
    "archived": false,
    "pushed_at": "2026-07-14T13:42:25Z",
@@ -15184,7 +15184,7 @@
    "url": "https://github.com/LucasPickering/slumber",
    "description": "Terminal-based HTTP/REST client",
    "category": "Web",
-   "stars": 1202,
+   "stars": 1203,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-04T15:17:38Z",
@@ -15831,7 +15831,7 @@
    "stars": 1039,
    "language": "Rust",
    "archived": false,
-   "pushed_at": "2026-07-18T21:56:33Z",
+   "pushed_at": "2026-07-19T10:48:40Z",
    "homepage": "https://spotatui.com",
    "methods": [
     {
@@ -16581,7 +16581,7 @@
    "stars": 911,
    "language": "Rust",
    "archived": false,
-   "pushed_at": "2026-07-13T08:59:10Z",
+   "pushed_at": "2026-07-19T10:48:56Z",
    "methods": [
     {
      "kind": "cargo",
@@ -18444,7 +18444,7 @@
    "stars": 538,
    "language": "Go",
    "archived": false,
-   "pushed_at": "2026-07-18T23:44:44Z",
+   "pushed_at": "2026-07-19T10:39:05Z",
    "homepage": "https://discord.gg/e4xSs6NBN8",
    "methods": [
     {
@@ -18717,7 +18717,7 @@
    "stars": 475,
    "language": "Rust",
    "archived": false,
-   "pushed_at": "2026-07-19T10:23:27Z",
+   "pushed_at": "2026-07-19T10:47:58Z",
    "homepage": "https://reyamira.github.io/models/",
    "methods": [
     {
@@ -26692,6 +26692,45 @@
       "git"
      ],
      "note": "then build per the README"
+    }
+   ]
+  },
+  {
+   "name": "ghostty-config-cli",
+   "url": "https://github.com/ajr-khll/ghostty-config-cli",
+   "description": "Fullscreen terminal UI for editing your Ghostty config, with a live preview of themes, fonts, colors, and cursor.",
+   "category": "Development",
+   "stars": 19,
+   "language": "TypeScript",
+   "archived": false,
+   "pushed_at": "2026-07-18T11:16:11Z",
+   "methods": [
+    {
+     "kind": "npm",
+     "command": "npm install -g ghostty-config-cli",
+     "source": "readme",
+     "requires": [
+      "npm"
+     ],
+     "note": "from README"
+    },
+    {
+     "kind": "source",
+     "command": "git clone https://github.com/ajr-khll/ghostty-config-cli && cd ghostty-config-cli",
+     "source": "inferred",
+     "requires": [
+      "git"
+     ],
+     "note": "then build per the README"
+    },
+    {
+     "kind": "brew",
+     "command": "brew install ghostty-config-cli",
+     "source": "inferred",
+     "requires": [
+      "brew"
+     ],
+     "note": "homebrew"
     }
    ]
   },

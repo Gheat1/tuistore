@@ -202,6 +202,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("topgrade", "https://github.com/topgrade-rs/topgrade", "Development"),
     ("mprocs", "https://github.com/pvolok/mprocs", "Development"),
     ("gitui", "https://github.com/extrawurst/gitui", "Development"),
+    ("ghostty-config-cli", "https://github.com/ajr-khll/ghostty-config-cli", "Development"),
     # Dashboards / System
     ("fastfetch", "https://github.com/fastfetch-cli/fastfetch", "Dashboards"),
     ("neofetch", "https://github.com/dylanaraps/neofetch", "Dashboards"),
