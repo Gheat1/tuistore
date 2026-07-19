@@ -13,7 +13,7 @@ requires-python = ">=3.11"
 dependencies = [
     "textual>=1.0",
     "httpx>=0.27",
-    "ricekit @ git+https://github.com/Gheat1/ricekit",
+    "ricekit>=0.2.0",
 ]
 keywords = ["tui", "terminal", "textual", "app-store", "package-manager", "awesome-tuis"]
 classifiers = [
