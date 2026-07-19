@@ -15,7 +15,10 @@ def _is_windows() -> bool:
 
 
 def _windows_local_dir() -> Path:
-    return Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        return Path(local)
+    return Path.home() / "AppData" / "Local"
 
 
 def user_data_dir() -> Path:
