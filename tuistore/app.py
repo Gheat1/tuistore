@@ -293,7 +293,18 @@ class InstallModal(ModalScreen):
         self.running = False
         self.done = True
         result = Text()
-        if code == "0":
+        if code == "0" and self.method.is_bare_clone:
+            # clone-only: nothing was actually built/installed, so never
+            # record it as one — not a warning either, since nothing went
+            # wrong, this method just isn't a complete install by design.
+            result.append(f"{icons.CHECK_CIRCLE}  cloned ", style=f"bold {palette.blue}")
+            result.append(self.entry.name, style=palette.text)
+            result.append(" — follow its README to finish building; not marked as installed",
+                          style=palette.dim)
+            self.app.notify(
+                f"cloned {self.entry.name} — this is a source checkout, not a finished "
+                f"install; build it per the README", severity="information")
+        elif code == "0":
             verified = self.app.on_installed(self.entry, self.method)
             if verified:
                 result.append(f"{icons.CHECK_CIRCLE}  installed ", style=f"bold {palette.green}")

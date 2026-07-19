@@ -80,10 +80,45 @@ _NOISE = {
 }
 
 
+# cargo flags that take a following value — the value is never the crate name
+_CARGO_VALUE_FLAGS = {"--git", "--branch", "--tag", "--rev", "--path", "--version", "--features"}
+
+
+def _cargo_pkg(command: str) -> str | None:
+    """Crate name from a `cargo install` command. Git-aware: `--git <url>`
+    installs have no crate name in the command line at all (that lives in the
+    remote Cargo.toml, which we don't fetch) — the repo name is the best
+    available guess, e.g. `--git .../lsd-rs/lsd.git --branch main` -> "lsd",
+    never "main" (a naive flag-strip treats a value-taking flag's value as a
+    free token and picks whatever value happens to sit first)."""
+    tokens = command.split()
+    if "--git" in tokens:
+        idx = tokens.index("--git")
+        if idx + 1 >= len(tokens):
+            return None
+        url = tokens[idx + 1].rstrip("/")
+        repo = url.rsplit("/", 1)[-1]
+        return repo[:-4] if repo.endswith(".git") else (repo or None)
+    skip_next = False
+    for t in tokens:
+        if skip_next:
+            skip_next = False
+            continue
+        if t in _CARGO_VALUE_FLAGS:
+            skip_next = True
+            continue
+        if t.lower() in _NOISE or t.startswith("-"):
+            continue
+        return t.split("@")[0]
+    return None
+
+
 def pkg_from_command(kind: str, command: str) -> str | None:
     """Best-effort package / target name from an install command."""
     if kind in ("script", "source"):
         return None
+    if kind in ("cargo", "cargo-binstall"):
+        return _cargo_pkg(command)
     tokens = command.replace("&&", " ").split()
     cands = [
         t for t in tokens
@@ -173,6 +208,12 @@ def update_command(rec: dict) -> str | None:
         return rec.get("command")
     if kind == "source":
         return None
+    if kind in ("cargo", "cargo-binstall") and "--git" in rec.get("command", ""):
+        # a --git install has no crate name on the command line to template
+        # with — re-run the exact original invocation instead, which is
+        # always correct regardless of what pkg_from_command could guess.
+        cmd = rec["command"]
+        return cmd if "--force" in cmd else f"{cmd} --force"
     tmpl = _UPDATE.get(kind)
     if not tmpl or not pkg:
         return None

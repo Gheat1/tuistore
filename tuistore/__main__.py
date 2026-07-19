@@ -127,7 +127,12 @@ def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None
         return 1
 
     code = _run(cmd)
-    if code == 0:
+    if code == 0 and chosen.is_bare_clone:
+        # clone-only: nothing was actually built, so never record it as an
+        # install — the user still has to build it themselves per the README
+        print(f"cloned {entry.name} — that's just a source checkout, follow its README to "
+              f"finish building; not marked as installed")
+    elif code == 0:
         record_install(entry.slug, entry.name, chosen)
         if verify_landed(entry.name, entry.methods):
             print(f"✓ installed {entry.name} — manage with `tuistore update/remove {entry.name}`")

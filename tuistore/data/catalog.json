@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-07-19T07:21:39Z",
+ "generated_at": "2026-07-19T07:32:39Z",
  "source": "awesome-tuis (rothgar/awesome-tuis) + modern terminal essentials + Gheat suite",
  "count": 750,
  "entries": [
@@ -11,7 +11,7 @@
    "description": "A fast, clean TUI for Linear — status-grouped issues, instant startup, full keyboard + mouse control.",
    "author_note": "by Gheat · the app the whole suite (and ricekit) grew out of",
    "featured": true,
-   "stars": 66,
+   "stars": 67,
    "archived": false,
    "pushed_at": "2026-07-15T00:59:32Z",
    "methods": [
@@ -41,7 +41,7 @@
    "description": "An animated TUI player for Navidrome — cover art in the terminal, playback via mpv, themes via ricekit.",
    "author_note": "by Gheat · music + cover art, right in your terminal",
    "featured": true,
-   "stars": 11,
+   "stars": 12,
    "archived": false,
    "pushed_at": "2026-07-15T09:08:47Z",
    "methods": [
@@ -63,7 +63,7 @@
    "description": "🍚 A developer's TUI suite for Textual — themes, widgets, modals, icons, and the design system behind ltui. This store is built on it.",
    "author_note": "by Gheat · the design system tuistore itself is built on — run ricekit-gallery",
    "featured": true,
-   "stars": 2,
+   "stars": 3,
    "archived": false,
    "pushed_at": "2026-07-10T00:11:52Z",
    "methods": [
@@ -160,7 +160,7 @@
    "description": "A pomodoro timer written in pure C — simple, focused, terminal-native.",
    "author_note": "by @gabrielzschmitz · a tiny pomodoro timer in pure C",
    "featured": true,
-   "stars": 432,
+   "stars": 433,
    "archived": false,
    "pushed_at": "2026-07-18T20:04:47Z",
    "methods": [
@@ -312,10 +312,10 @@
    "url": "https://github.com/sst/opencode",
    "description": "AI coding agent, built for the terminal",
    "category": "Development",
-   "stars": 187312,
+   "stars": 187311,
    "language": "TypeScript",
    "archived": false,
-   "pushed_at": "2026-07-19T07:19:41Z",
+   "pushed_at": "2026-07-19T07:31:40Z",
    "homepage": "https://opencode.ai",
    "methods": [
     {
@@ -427,7 +427,7 @@
    "url": "https://github.com/yt-dlp/yt-dlp",
    "description": "A feature-rich command-line audio/video downloader",
    "category": "Multimedia",
-   "stars": 178805,
+   "stars": 178806,
    "language": "Python",
    "archived": false,
    "pushed_at": "2026-07-14T14:14:21Z",
@@ -525,7 +525,7 @@
    "url": "https://github.com/openai/codex",
    "description": "Lightweight coding agent that runs in your terminal",
    "category": "Development",
-   "stars": 99487,
+   "stars": 99488,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-19T00:04:10Z",
@@ -681,7 +681,7 @@
    "url": "https://github.com/junegunn/fzf",
    "description": "A general-purpose command-line fuzzy finder",
    "category": "Miscellaneous",
-   "stars": 81836,
+   "stars": 81835,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-18T12:54:22Z",
@@ -830,7 +830,7 @@
    "stars": 80506,
    "language": "Go",
    "archived": false,
-   "pushed_at": "2026-07-18T20:50:11Z",
+   "pushed_at": "2026-07-19T07:30:34Z",
    "methods": [
     {
      "kind": "brew",
@@ -957,7 +957,7 @@
    "url": "https://github.com/BurntSushi/ripgrep",
    "description": "Ripgrep recursively searches directories for a regex pattern while respecting your gitignore",
    "category": "CLI Tools",
-   "stars": 66316,
+   "stars": 66315,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-17T13:14:39Z",
@@ -1714,7 +1714,7 @@
    "url": "https://github.com/tmux/tmux",
    "description": "Terminal multiplexer",
    "category": "Productivity",
-   "stars": 47869,
+   "stars": 47870,
    "language": "C",
    "archived": false,
    "pushed_at": "2026-07-18T20:47:42Z",
@@ -1834,7 +1834,7 @@
    "description": "A Go framework based on Elm to build functional and fun terminal apps",
    "category": "Libraries",
    "language": "Go",
-   "stars": 43823,
+   "stars": 43822,
    "archived": false,
    "pushed_at": "2026-07-13T09:02:49Z",
    "methods": [
@@ -2063,7 +2063,7 @@
    "url": "https://github.com/sxyazi/yazi",
    "description": "Blazing fast terminal file manager written in Rust, based on async I/O.",
    "category": "File Managers",
-   "stars": 40473,
+   "stars": 40474,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-16T19:22:27Z",
@@ -2112,7 +2112,7 @@
    "url": "https://github.com/nushell/nushell",
    "description": "A new type of shell",
    "category": "Shell & Prompt",
-   "stars": 40043,
+   "stars": 40044,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-18T22:18:52Z",
@@ -3056,7 +3056,7 @@
    "stars": 30633,
    "language": "Rust",
    "archived": false,
-   "pushed_at": "2026-07-19T07:14:27Z",
+   "pushed_at": "2026-07-19T07:21:28Z",
    "homepage": "https://atuin.sh",
    "methods": [
     {
@@ -3448,7 +3448,7 @@
    "url": "https://github.com/gitleaks/gitleaks",
    "description": "Find secrets with Gitleaks 🔑",
    "category": "Development",
-   "stars": 28199,
+   "stars": 28198,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-15T04:12:57Z",
@@ -3649,7 +3649,7 @@
    "url": "https://github.com/charmbracelet/glow",
    "description": "A markdown reader, designed from the ground up to showcase the elegance and capabilities of TUI.",
    "category": "Productivity",
-   "stars": 26396,
+   "stars": 26398,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-04-26T00:10:21Z",
@@ -4116,7 +4116,7 @@
    "url": "https://github.com/JanDeDobbeleer/oh-my-posh",
    "description": "The most customisable and low-latency cross platform/shell prompt renderer",
    "category": "Shell & Prompt",
-   "stars": 23074,
+   "stars": 23075,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-18T19:06:46Z",
@@ -10119,7 +10119,7 @@
    "url": "https://github.com/simonmichael/hledger",
    "description": "A fast TUI for browsing double entry bookkeeping data",
    "category": "Productivity",
-   "stars": 4588,
+   "stars": 4587,
    "language": "Haskell",
    "archived": false,
    "pushed_at": "2026-07-18T17:45:09Z",
@@ -10857,7 +10857,7 @@
    "methods": [
     {
      "kind": "cargo",
-     "command": "~$ cargo install --git https://github.com/kamiyaa/joshuto.git --force",
+     "command": "cargo install --git https://github.com/kamiyaa/joshuto.git --force",
      "source": "readme",
      "requires": [
       "cargo"
@@ -11165,7 +11165,7 @@
    "url": "https://github.com/batrachianai/toad",
    "description": "A unified interface for AI",
    "category": "Development",
-   "stars": 3318,
+   "stars": 3319,
    "language": "Python",
    "archived": false,
    "pushed_at": "2026-05-26T08:43:50Z",
@@ -11268,7 +11268,7 @@
    "stars": 3284,
    "language": "Python",
    "archived": false,
-   "pushed_at": "2026-07-17T05:51:06Z",
+   "pushed_at": "2026-07-19T07:23:04Z",
    "methods": [
     {
      "kind": "uv",
@@ -13766,7 +13766,7 @@
    "url": "https://github.com/d99kris/nchat",
    "description": "Telegram/WhatsApp client",
    "category": "Messaging",
-   "stars": 1854,
+   "stars": 1855,
    "language": "C++",
    "archived": false,
    "pushed_at": "2026-07-19T01:25:59Z",

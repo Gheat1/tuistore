@@ -93,6 +93,18 @@ class Method:
         """A remote install script (curl|sh) — highest-risk, always warn."""
         return self.kind == "script"
 
+    @property
+    def is_bare_clone(self) -> bool:
+        """A `source` method that's only `git clone ... && cd ...`, with no
+        actual build/install step — the honest fallback when nothing better
+        is documented, but running it can never finish installing anything
+        (github.com/Gheat1/tuistore/issues/3). Never record this as a
+        successful install even though `git clone` itself exits 0."""
+        if self.kind != "source":
+            return False
+        parts = [p.strip() for p in self.command.split("&&")]
+        return len(parts) == 2 and parts[0].startswith("git clone ") and parts[1].startswith("cd ")
+
     def available(self, env: Env) -> bool:
         if self.os and env.os not in self.os:
             return False

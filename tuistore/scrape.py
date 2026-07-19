@@ -20,7 +20,11 @@ from .installer import Method, classify, make, parse_repo
 # fenced ``` blocks and single-backtick inline code
 _FENCE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
 _INLINE = re.compile(r"`([^`\n]+)`")
-_PROMPT = re.compile(r"^\s*(?:\$|#|>|\xe2\x9d\xaf|❯|»)\s+")
+# an optional `~` or `~/some/path` cwd-indicator (a common shell-prompt
+# convention, e.g. `~$ cargo install ...`) directly before the prompt glyph —
+# without it, "~$ cargo install --git ...--force" scrapes with "~$" glued
+# onto the command, which then gets treated as a literal token downstream.
+_PROMPT = re.compile(r"^\s*(?:~[\w./-]*)?(?:\$|#|>|\xe2\x9d\xaf|❯|»)\s+")
 _MAXLEN = 400
 
 
