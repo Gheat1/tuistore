@@ -35,7 +35,7 @@ def _run(cmd: str) -> int:
 
 def _confirm(prompt: str, assume_yes: bool) -> bool:
     if assume_yes or not sys.stdin.isatty():
-        return True
+        return assume_yes
     try:
         return (input(f"{prompt} [Y/n] ").strip().lower() or "y") in ("y", "yes")
     except (EOFError, KeyboardInterrupt):
