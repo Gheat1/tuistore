@@ -1,6 +1,16 @@
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
-from tuistore.installed import pkg_from_command, uninstall_command, update_command
+from tuistore.installed import (
+    load_ledger,
+    pkg_from_command,
+    record_install,
+    uninstall_command,
+    update_command,
+)
+from tuistore.installer import Method
 
 
 class TestPkgFromCommandScopedNpm(unittest.TestCase):
@@ -121,6 +131,46 @@ class TestPkgFromCommandRegularPackages(unittest.TestCase):
         self.assertEqual(
             pkg_from_command("brew", "brew install user/tap/formula"), "formula"
         )
+
+
+class TestYarnPackageParsing(unittest.TestCase):
+    """yarn's only recognized install shape is `yarn global add <pkg>`
+    (see installer.py's yarn regex/kind). The bare word "global" used to be
+    missing from _NOISE, so it was picked up as the package name instead of
+    the real target — every yarn install recorded "global" as its package."""
+
+    def test_pkg_from_command_ignores_bare_global(self):
+        self.assertEqual(
+            pkg_from_command("yarn", "yarn global add ripgrep-cli"), "ripgrep-cli"
+        )
+
+    def test_pkg_from_command_ignores_bare_global_other_pkg(self):
+        self.assertEqual(
+            pkg_from_command("yarn", "yarn global add fkill-cli"), "fkill-cli"
+        )
+
+    def test_record_install_stores_real_package_not_global(self):
+        method = Method(kind="yarn", command="yarn global add ripgrep-cli")
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger_path = Path(tmp) / "installed.json"
+            with mock.patch("tuistore.installed.LEDGER", ledger_path):
+                record_install("ripgrep-cli", "ripgrep-cli", method)
+                rec = load_ledger()["ripgrep-cli"]
+        self.assertEqual(rec["pkg"], "ripgrep-cli")
+        self.assertEqual(rec["bin"], "ripgrep-cli")
+        self.assertNotEqual(rec["pkg"], "global")
+
+    def test_uninstall_command_uses_real_package_name(self):
+        rec = {"kind": "yarn", "pkg": "ripgrep-cli", "bin": "ripgrep-cli"}
+        self.assertEqual(uninstall_command(rec), "yarn global remove ripgrep-cli")
+        self.assertNotIn("global remove global", uninstall_command(rec))
+
+    def test_update_command_uses_real_package_name(self):
+        rec = {"kind": "yarn", "pkg": "ripgrep-cli", "bin": "ripgrep-cli"}
+        cmd = update_command(rec)
+        self.assertIsNotNone(cmd)
+        self.assertIn("ripgrep-cli", cmd)
+        self.assertNotIn("global add global", cmd)
 
 
 if __name__ == "__main__":

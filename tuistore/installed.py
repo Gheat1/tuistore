@@ -79,6 +79,16 @@ _NOISE = {
     "xbps-install", "apk", "nix", "nix-env", "flatpak", "snap", "emerge",
     "python", "python3", "-m", "i",
     "scoop", "choco", "winget",
+    # bare (non-flag) "global" is yarn's subcommand in its only recognized
+    # install shape, "yarn global add <pkg>" (see installer.py's yarn
+    # pattern) — without this, pkg_from_command('yarn', ...) always returns
+    # "global" instead of the package name. There IS a real npm package
+    # literally named "global" (an env-var helper library, not a CLI), so
+    # `yarn global add global` would still be misparsed — but it was already
+    # broken before this fix (it resolved to the same wrong answer, "global",
+    # either way), no such package appears in tuistore's catalog of CLI/TUI
+    # tools, and this is by far the common case yarn is actually used for.
+    "global",
 }
 
 
@@ -232,6 +242,7 @@ _UPDATE = {
     "brew": "brew upgrade {pkg}",
     "npm": "npm install -g {pkg}@latest",
     "pnpm": "pnpm add -g {pkg}@latest",
+    "yarn": "yarn global add {pkg}@latest",
     "gem": "gem update {pkg}",
     "pacman": "sudo pacman -S {pkg}",
     "yay": "yay -S {pkg}",
