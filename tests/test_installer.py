@@ -109,5 +109,29 @@ class TestClassifyUvPip(unittest.TestCase):
         self.assertEqual(uv_methods[0].command, "uv tool install ruff")
 
 
+class ClassifyScriptTest(unittest.TestCase):
+    def test_curl_pipe_sudo_bash_is_a_script(self) -> None:
+        self.assertEqual(
+            classify("curl -fsSL https://example.com/install.sh | sudo bash"),
+            "script",
+        )
+
+    def test_wget_pipe_sudo_bash_is_a_script(self) -> None:
+        # Regression: the wget branch of the script regex previously lacked
+        # the optional `sudo` that the curl branch already allowed, so a
+        # documented `wget ... | sudo bash` install line silently failed to
+        # classify (returned None) while the equivalent curl form worked.
+        self.assertEqual(
+            classify("wget -qO- https://example.com/install.sh | sudo bash"),
+            "script",
+        )
+
+    def test_wget_pipe_sh_without_sudo_is_still_a_script(self) -> None:
+        self.assertEqual(
+            classify("wget -qO- https://example.com/install.sh | sh"),
+            "script",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

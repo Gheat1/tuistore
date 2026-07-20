@@ -256,7 +256,7 @@ _CLASSIFY = [
     ("choco", re.compile(r"\bchoco(?:latey)?\s+install\b")),
     ("winget", re.compile(r"\bwinget\s+install\b")),
     # remote install scripts: POSIX curl|sh and PowerShell iwr|iex
-    ("script", re.compile(r"\bcurl\b.*\|\s*(?:sudo\s+)?(?:sh|bash)\b|\bwget\b.*\|\s*(?:sh|bash)\b")),
+    ("script", re.compile(r"\bcurl\b.*\|\s*(?:sudo\s+)?(?:sh|bash)\b|\bwget\b.*\|\s*(?:sudo\s+)?(?:sh|bash)\b")),
     ("script", re.compile(r"(?i)\b(?:iwr|invoke-webrequest)\b.*\|\s*(?:iex|invoke-expression)\b")),
 ]
 
