@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Iterable
 
 from .platform import Env
-from .shell import shell_command
+from .shell import shell_command, shell_env, wrap_command
 
 # ── kind metadata ──────────────────────────────────────────────────────────
 # kind -> (label, preference[lower=better], requires, os allow, family allow)
@@ -361,13 +361,16 @@ def best(methods: Iterable[Method], env: Env) -> Method | None:
 async def run_stream(command: str) -> AsyncIterator[tuple[str, str]]:
     """Execute `command` in a login shell, yielding ("out", line) as it runs
     and finally ("exit", returncode). A login shell is used so the user's
-    package managers are on PATH exactly as in their normal terminal."""
+    package managers are on PATH exactly as in their normal terminal; PATH
+    is additionally restored via `wrap_command`/`shell_env` in case the
+    login shell's own startup files reset it (see `shell.shell_env`)."""
     shell, shell_args = shell_command()
     try:
         proc = await asyncio.create_subprocess_exec(
-            shell, *shell_args, command,
+            shell, *shell_args, wrap_command(command),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
+            env=shell_env(),
         )
     except Exception as e:  # pragma: no cover - shell missing is pathological
         yield ("out", f"could not start shell: {e}")
