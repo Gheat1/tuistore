@@ -255,6 +255,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("taskell", "https://github.com/smallhadroncollider/taskell", "Productivity"),
     # Miscellaneous
     ("dummiesnmap", "https://github.com/kaizokuv/dummiesnmap", "Miscellaneous"),
+    ("psnTUI", "https://github.com/TripShuti/psnTUI", "Games"),
     # Screensavers / fun
     ("cmatrix", "https://github.com/abishekvashok/cmatrix", "Screensavers"),
     ("pipes.sh", "https://github.com/pipeseroni/pipes.sh", "Screensavers"),
