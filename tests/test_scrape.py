@@ -19,6 +19,47 @@ docker run --rm mikefarah/yq
             [("brew", ["macos"]), ("apt", ["linux"])],
         )
 
+    def test_rejects_bare_hash_comment_lines(self) -> None:
+        # A bare "# apt install mytool" comment line (no leading distro
+        # label or other text) must not be scraped as a real command: "#"
+        # is a Markdown comment marker here, not a root-shell prompt glyph,
+        # so stripping it before the comment filter runs would otherwise
+        # let it masquerade as a verified README install command.
+        readme = """```sh
+# apt install mytool
+# Fedora: dnf install mytool
+brew install mytool
+```"""
+
+        methods = extract_methods(readme, "https://github.com/someone/mytool")
+
+        self.assertEqual(
+            [(method.kind, method.command) for method in methods],
+            [("brew", "brew install mytool")],
+        )
+
+    def test_still_strips_non_hash_prompt_glyphs(self) -> None:
+        # Regression check for the fix above: "#" no longer counts as a
+        # prompt glyph, but the other shell-prompt conventions ($, the
+        # heavy angle-quote ❯, and the double angle-quote ») must still be
+        # stripped from the front of a command line.
+        readme = """```sh
+$ brew install mytool
+❯ cargo install mytool
+» pip install mytool
+```"""
+
+        methods = extract_methods(readme, "https://github.com/someone/mytool")
+
+        self.assertEqual(
+            sorted((method.kind, method.command) for method in methods),
+            sorted([
+                ("brew", "brew install mytool"),
+                ("cargo", "cargo install mytool"),
+                ("pip", "pip install mytool"),
+            ]),
+        )
+
     def test_accepts_chained_env_and_quoted_var_prefixes(self) -> None:
         # at_start=True must not reject real install lines that happen to
         # have more than a bare sudo/env prefix: a two-step update-then-

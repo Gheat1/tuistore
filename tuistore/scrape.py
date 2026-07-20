@@ -24,7 +24,13 @@ _INLINE = re.compile(r"`([^`\n]+)`")
 # convention, e.g. `~$ cargo install ...`) directly before the prompt glyph —
 # without it, "~$ cargo install --git ...--force" scrapes with "~$" glued
 # onto the command, which then gets treated as a literal token downstream.
-_PROMPT = re.compile(r"^\s*(?:~[\w./-]*)?(?:\$|#|>|\xe2\x9d\xaf|❯|»|▶)\s+")
+#
+# Note: bare "#" is deliberately NOT treated as a prompt glyph here. Some
+# READMEs use "#" as a root-shell prompt, but Markdown comment lines like
+# "# Debian/Ubuntu: apt install foo" are far more common in the wild, and
+# stripping a leading "#" before the comment filter below runs would let
+# those comment lines masquerade as real, "from README" install commands.
+_PROMPT = re.compile(r"^\s*(?:~[\w./-]*)?(?:\$|>|\xe2\x9d\xaf|❯|»|▶)\s+")
 _MAXLEN = 400
 
 
@@ -37,10 +43,18 @@ def _clean(line: str) -> str:
 def _iter_command_lines(readme: str):
     for block in _FENCE.findall(readme):
         for raw in block.splitlines():
+            # Check for a comment marker on the *raw* line, before any
+            # prompt-glyph stripping, so a leading "#" always means
+            # "comment" and can never first get stripped as a prompt
+            # glyph and then sail past this filter.
+            if raw.strip().startswith("#"):
+                continue
             line = _clean(raw)
-            if line and not line.startswith("#"):
+            if line:
                 yield line
     for inline in _INLINE.findall(readme):
+        if inline.strip().startswith("#"):
+            continue
         line = _clean(inline)
         if line:
             yield line
