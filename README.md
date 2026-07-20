@@ -248,6 +248,17 @@ XDG-style dirs on macOS and Linux; Local AppData on Windows:
 
 `tuistore --doctor` prints what your machine looks like to the install engine.
 
+## star history
+
+<div align="center">
+<a href="https://star-history.com/#Gheat1/tuistore&Date">
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="assets/star-history-dark.svg">
+<img src="assets/star-history-light.svg" alt="star history" width="70%">
+</picture>
+</a>
+</div>
+
 ## contributing
 
 Missing a tool, or a better install command? The catalog lives in
