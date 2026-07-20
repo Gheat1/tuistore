@@ -62,10 +62,6 @@ def extract_methods(readme: str, url: str) -> list[Method]:
         kind = classify(line, at_start=True)
         if not kind:
             continue
-        # docker/podman README lines are `run`/`pull` usage examples — they run
-        # a container, they don't persistently install a tool. Never scrape them.
-        if kind in ("docker", "podman"):
-            continue
         low = line.lower()
         mentions = any(t and t in low for t in tokens)
         if kind == "script":

@@ -51,8 +51,6 @@ KINDS: dict[str, dict] = {
     "nix":      dict(label="nix profile install", pref=30, requires=["nix"]),
     "flatpak":  dict(label="flatpak install",     pref=31, requires=["flatpak"], os=["linux"]),
     "snap":     dict(label="snap install",        pref=32, requires=["snap"],    os=["linux"]),
-    "docker":   dict(label="docker",              pref=35, requires=["docker"]),
-    "podman":   dict(label="podman",              pref=36, requires=["podman"]),
     # Windows package managers
     "scoop":    dict(label="scoop install",       pref=37, requires=["scoop"],    os=["windows"]),
     "choco":    dict(label="choco install",       pref=38, requires=["choco"],    os=["windows"]),
@@ -248,8 +246,6 @@ _CLASSIFY = [
     ("flatpak", re.compile(r"\bflatpak\s+install\b")),
     ("snap", re.compile(r"\bsnap\s+install\b")),
     ("brew", re.compile(r"\bbrew\s+install\b")),
-    ("docker", re.compile(r"\bdocker\s+(?:run|pull)\b")),
-    ("podman", re.compile(r"\bpodman\s+(?:run|pull)\b")),
     ("scoop", re.compile(r"\bscoop\s+install\b")),
     ("choco", re.compile(r"\bchoco(?:latey)?\s+install\b")),
     ("winget", re.compile(r"\bwinget\s+install\b")),
@@ -263,9 +259,13 @@ _CLASSIFY = [
 # sudo/doas, `VAR=val` env assignments, and a macOS `arch -arm64` wrapper.
 # Anything else before the verb (e.g. "or: ", "alias x=") is prose, not a command.
 _CMD_PREFIX = re.compile(
-    r"^(?:\s*|sudo\s+|doas\s+|[A-Za-z_][A-Za-z0-9_]*=\S+\s+|arch\s+-\S+\s+)*$"
+    r"^\s*(?:(?:sudo|doas)(?:\s+-\S+)*\s+|"
+    r"[A-Za-z_][A-Za-z0-9_]*=\S+\s+|arch\s+-\S+\s+)*$"
 )
-_ARCH_WRAP = re.compile(r"^\s*arch\s+-(?:arm64|x86_64|i386)\b")
+_ARCH_WRAP = re.compile(
+    r"^\s*(?:(?:sudo|doas)(?:\s+-\S+)*\s+|"
+    r"[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*arch\s+-(?:arm64|x86_64|i386)\b"
+)
 
 
 def classify(command: str, *, at_start: bool = False) -> str | None:

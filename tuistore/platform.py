@@ -30,8 +30,8 @@ PROBE = [
     "nix", "nix-env", "snap", "flatpak",
     # Windows package managers
     "scoop", "choco", "winget",
-    # containers + fetchers + build
-    "docker", "podman", "curl", "wget", "git", "make", "gcc", "cc",
+    # fetchers + build
+    "curl", "wget", "git", "make", "gcc", "cc",
     # shells (used for running commands)
     "pwsh", "powershell",
     # our own helpers
