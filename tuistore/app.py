@@ -1520,11 +1520,12 @@ class StoreApp(KitApp):
         self.push_screen(ManageModal())
 
     def action_update_self(self) -> None:
-        from .__main__ import _how_installed, _install_source, _SELF_SRC
+        from .__main__ import _how_installed, _install_source, _self_update_manager, _SELF_SRC
 
+        how = _how_installed()
         # if this copy was installed via brew, update through brew instead of
         # creating a second, parallel uv/pipx-managed copy alongside it
-        if _how_installed() == "brew":
+        if how == "brew":
             self.push_screen(RunModal(
                 f"{icons.REFRESH} update tuistore", "brew upgrade gheat1/tuistore/tuistore",
                 subtitle="installed via Homebrew — updating with brew instead",
@@ -1537,9 +1538,13 @@ class StoreApp(KitApp):
         # jumps ahead of an actual release onto git's HEAD.
         from_git = _install_source() == "git"
         src = _SELF_SRC if from_git else "tuistore"
-        if self.env.has("uv"):
+        # match the manager that actually owns this copy (see
+        # _self_update_manager) instead of just whichever of uv/pipx happens
+        # to be on PATH, so this doesn't create a second, parallel copy.
+        mgr = _self_update_manager(how, self.env.has)
+        if mgr == "uv":
             cmd = f"uv tool install --force --refresh {src}" if from_git else f"uv tool upgrade {src}"
-        elif self.env.has("pipx"):
+        elif mgr == "pipx":
             cmd = f"pipx install --force {src}" if from_git else f"pipx upgrade {src}"
         else:
             self.notify("need uv or pipx to self-update", severity="warning")

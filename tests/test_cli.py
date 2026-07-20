@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 import tuistore.__main__ as main_module
-from tuistore.__main__ import _cmd_remove
+from tuistore.__main__ import _cmd_remove, _self_update_manager, _update_self
 
 
 class ConfirmationTest(unittest.TestCase):
@@ -72,6 +72,68 @@ class UpdateDispatchTest(unittest.TestCase):
     def test_update_without_flags_still_resolves_named_tool(self) -> None:
         self_, named, system, installed = self._run(["tuistore", "update", "ripgrep"])
         named.assert_called_once_with("ripgrep")
+
+
+class SelfUpdateManagerTest(unittest.TestCase):
+    """_self_update_manager must match the manager _how_installed() says
+    actually owns the running copy, not just whichever is available — a
+    pipx-managed copy has uv available too (and vice versa), but picking
+    the wrong one creates a second, parallel copy instead of updating the
+    real one."""
+
+    def test_pipx_owned_copy_prefers_pipx_even_with_uv_available(self) -> None:
+        has = lambda tool: tool in ("uv", "pipx")
+        self.assertEqual(_self_update_manager("pipx", has), "pipx")
+
+    def test_uv_owned_copy_prefers_uv_even_with_pipx_available(self) -> None:
+        has = lambda tool: tool in ("uv", "pipx")
+        self.assertEqual(_self_update_manager("uv", has), "uv")
+
+    def test_owned_manager_missing_from_path_yields_none(self) -> None:
+        # _how_installed() says pipx, but pipx itself isn't on PATH (e.g. a
+        # stale/broken env) — don't silently fall back to uv and create a
+        # second copy; report "can't update" instead.
+        has = lambda tool: tool == "uv"
+        self.assertIsNone(_self_update_manager("pipx", has))
+
+    def test_unknown_falls_back_to_whatever_is_available(self) -> None:
+        has = lambda tool: tool == "pipx"
+        self.assertEqual(_self_update_manager("unknown", has), "pipx")
+
+    def test_unknown_prefers_uv_when_both_available(self) -> None:
+        has = lambda tool: tool in ("uv", "pipx")
+        self.assertEqual(_self_update_manager("unknown", has), "uv")
+
+    def test_unknown_with_neither_available_yields_none(self) -> None:
+        self.assertIsNone(_self_update_manager("unknown", lambda tool: False))
+
+
+class UpdateSelfTest(unittest.TestCase):
+    """End-to-end: _update_self() must run the command for the manager that
+    actually installed this copy, even when a different manager is also on
+    PATH."""
+
+    def test_pipx_install_runs_pipx_even_when_uv_on_path(self) -> None:
+        with (
+            patch("tuistore.__main__._how_installed", return_value="pipx"),
+            patch("tuistore.__main__._install_source", return_value="pypi"),
+            patch("tuistore.__main__.shutil.which", side_effect=lambda t: f"/usr/bin/{t}" if t in ("uv", "pipx") else None),
+            patch("tuistore.__main__._run", return_value=0) as run,
+        ):
+            _update_self()
+
+        run.assert_called_once_with("pipx upgrade tuistore")
+
+    def test_uv_install_runs_uv_even_when_pipx_on_path(self) -> None:
+        with (
+            patch("tuistore.__main__._how_installed", return_value="uv"),
+            patch("tuistore.__main__._install_source", return_value="pypi"),
+            patch("tuistore.__main__.shutil.which", side_effect=lambda t: f"/usr/bin/{t}" if t in ("uv", "pipx") else None),
+            patch("tuistore.__main__._run", return_value=0) as run,
+        ):
+            _update_self()
+
+        run.assert_called_once_with("uv tool upgrade tuistore")
 
 
 if __name__ == "__main__":

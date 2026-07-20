@@ -345,6 +345,26 @@ def _install_source() -> str:
     return "pypi"  # default to the safer, version-gated upgrade path
 
 
+def _self_update_manager(how: str, has) -> str | None:
+    """Pick which manager to run the self-update through.
+
+    Matches the manager that actually owns this copy, per `_how_installed()`
+    ('uv' or 'pipx'), and only falls back to "whichever is available" when
+    `how` is 'unknown' (can't be determined) — so a pipx-managed copy never
+    gets a second, parallel uv-managed copy installed alongside it (or vice
+    versa). `has` reports whether a given manager is available (e.g. on
+    PATH), so callers can supply their own detection (a live `shutil.which`
+    check, a cached `Env.has`, ...).
+    """
+    if how in ("uv", "pipx"):
+        return how if has(how) else None
+    if has("uv"):
+        return "uv"
+    if has("pipx"):
+        return "pipx"
+    return None
+
+
 def _update_self() -> int:
     how = _how_installed()
     if how == "brew":
@@ -356,10 +376,11 @@ def _update_self() -> int:
     # when the version string hasn't changed (uv/pipx upgrades are otherwise
     # version-gated); a PyPI install should use the normal, version-gated
     # upgrade so it never jumps ahead of an actual release.
-    if shutil.which("uv"):
+    mgr = _self_update_manager(how, lambda tool: shutil.which(tool) is not None)
+    if mgr == "uv":
         verb = "install" if src == _SELF_SRC else "upgrade"
         return _run(f"uv tool {verb} {force}{src}".strip())
-    if shutil.which("pipx"):
+    if mgr == "pipx":
         verb = "install --force" if src == _SELF_SRC else "upgrade"
         return _run(f"pipx {verb} {src}")
     print(f"couldn't find uv or pipx — reinstall with:\n  uv tool install {force}{src}".strip())
