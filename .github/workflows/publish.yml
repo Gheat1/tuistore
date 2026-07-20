@@ -27,6 +27,13 @@ jobs:
 
   publish:
     needs: build
+    # Guard against publishing pre-release/RC GitHub Releases to real PyPI.
+    # The `release: published` event fires for both normal releases and
+    # ones explicitly marked "pre-release" — github.event.release.prerelease
+    # distinguishes them. `!= true` (rather than `== false`) also lets this
+    # job run on manual workflow_dispatch, where github.event.release is
+    # unset and the expression evaluates to null.
+    if: github.event.release.prerelease != true
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
