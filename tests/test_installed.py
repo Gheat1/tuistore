@@ -7,10 +7,13 @@ from tuistore.installed import (
     load_ledger,
     pkg_from_command,
     record_install,
+    system_upgrade_command,
     uninstall_command,
     update_command,
+    upgrade_managers,
 )
 from tuistore.installer import Method
+from tuistore.platform import Env
 
 
 class TestPkgFromCommandScopedNpm(unittest.TestCase):
@@ -171,6 +174,67 @@ class TestYarnPackageParsing(unittest.TestCase):
         self.assertIsNotNone(cmd)
         self.assertIn("ripgrep-cli", cmd)
         self.assertNotIn("global add global", cmd)
+
+
+class UpdateCommandTest(unittest.TestCase):
+    """update_command() must return a real command for every kind that
+    installer.py actually offers as an install method — a kind with a
+    working install + uninstall but no entry here silently falls through
+    to None ("no update command") even though the tool is on the box."""
+
+    def test_yarn_update_command(self) -> None:
+        rec = {"kind": "yarn", "pkg": "ripgrep-cli"}
+        self.assertEqual(update_command(rec), "yarn global upgrade ripgrep-cli")
+
+    def test_bun_update_command(self) -> None:
+        rec = {"kind": "bun", "pkg": "ripgrep-cli"}
+        self.assertEqual(update_command(rec), "bun update -g ripgrep-cli")
+
+    def test_bun_update_is_not_bun_runtime_upgrade(self) -> None:
+        # `bun upgrade` upgrades the bun runtime itself, not a globally
+        # installed package -- make sure we never emit that by accident.
+        rec = {"kind": "bun", "pkg": "ripgrep-cli"}
+        cmd = update_command(rec)
+        self.assertNotEqual(cmd, "bun upgrade")
+        self.assertNotIn("bun upgrade", cmd)
+
+    def test_emerge_update_command(self) -> None:
+        rec = {"kind": "emerge", "pkg": "ripgrep"}
+        self.assertEqual(update_command(rec), "sudo emerge --update ripgrep")
+
+
+class UninstallCommandTest(unittest.TestCase):
+    def test_yarn_uninstall_command(self) -> None:
+        rec = {"kind": "yarn", "pkg": "ripgrep-cli", "bin": "ripgrep-cli"}
+        self.assertEqual(uninstall_command(rec), "yarn global remove ripgrep-cli")
+
+    def test_bun_uninstall_command(self) -> None:
+        rec = {"kind": "bun", "pkg": "ripgrep-cli", "bin": "ripgrep-cli"}
+        self.assertEqual(uninstall_command(rec), "bun remove -g ripgrep-cli")
+
+
+class UpgradeManagersTest(unittest.TestCase):
+    def test_bun_and_yarn_are_included_when_present(self) -> None:
+        env = Env("linux", "ubuntu", {"debian"}, tools={"bun", "yarn"})
+        managers = upgrade_managers(env)
+        self.assertIn("bun", managers)
+        self.assertIn("yarn", managers)
+
+    def test_bun_and_yarn_are_excluded_when_absent(self) -> None:
+        env = Env("linux", "ubuntu", {"debian"}, tools=set())
+        managers = upgrade_managers(env)
+        self.assertNotIn("bun", managers)
+        self.assertNotIn("yarn", managers)
+
+    def test_emerge_still_included_when_present(self) -> None:
+        env = Env("linux", "gentoo", {"gentoo"}, tools={"emerge"})
+        self.assertIn("emerge", upgrade_managers(env))
+
+    def test_system_upgrade_command_includes_bun_and_yarn(self) -> None:
+        env = Env("linux", "ubuntu", {"debian"}, tools={"bun", "yarn"})
+        script = system_upgrade_command(env)
+        self.assertIn("bun update -g", script)
+        self.assertIn("yarn global upgrade", script)
 
 
 if __name__ == "__main__":
