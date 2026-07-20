@@ -1,4 +1,6 @@
 import os
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path, PureWindowsPath
@@ -92,6 +94,96 @@ class TestShellCommand(unittest.TestCase):
         exe, args = shell.shell_command()
         self.assertEqual(exe, "/bin/sh")
         self.assertEqual(args, ["-lc"])
+
+
+class TestShellPathRestoration(unittest.TestCase):
+    """`shell_command()` runs install commands through a POSIX *login*
+    shell so the user's package managers are on PATH exactly as in their
+    normal terminal. On Debian/Ubuntu that backfires: the stock
+    ``/etc/profile`` *overwrites* PATH rather than merging into it, and the
+    file most tools (nvm, etc.) actually append PATH in -- ``~/.bashrc`` --
+    starts with ``case $- in *i*) ;; *) return;; esac`` and so is skipped
+    entirely by a non-interactive login shell. A tool `platform.py` already
+    found via `shutil.which()` moments earlier can become invisible to the
+    very install command about to run.
+
+    We can't safely swap in the real `/etc/profile` here, so this
+    simulates the same shape of bug with a throwaway $HOME: a ``.profile``
+    that resets PATH the way Debian's ``/etc/profile`` does and then
+    chains into a ``.bashrc`` carrying the exact real-world nvm-style
+    "bail if not interactive" guard, with the PATH addition living after
+    that guard. `shell_env`/`wrap_command` must restore that addition
+    regardless.
+    """
+
+    def setUp(self):
+        if os.name == "nt":
+            # shell_command() never returns bash on Windows (pwsh/powershell/
+            # cmd.exe instead, where wrap_command() is a documented no-op) —
+            # this class tests POSIX login-shell startup semantics that
+            # simply don't apply there. A "bash" may still be on PATH via
+            # Git Bash on Windows runners, but shell_command() ignores it,
+            # so checking for its mere presence isn't the right gate.
+            self.skipTest("POSIX-only: shell_command() doesn't use bash on Windows")
+        bash = shutil.which("bash")
+        if not bash:
+            self.skipTest("bash not available")
+        self.bash = bash
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        home = Path(self.tmp.name)
+        # Mimic Debian's default ~/.profile chaining into ~/.bashrc, plus
+        # an explicit PATH reset standing in for /etc/profile's overwrite
+        # (the real /etc/profile isn't ours to rewrite in a test).
+        (home / ".profile").write_text(
+            'PATH="/usr/bin:/bin"\n'
+            "export PATH\n"
+            'if [ -f "$HOME/.bashrc" ]; then . "$HOME/.bashrc"; fi\n'
+        )
+        # The exact convention tools like nvm use: append to PATH at the
+        # bottom of .bashrc, past the stock "not interactive? bail" guard.
+        (home / ".bashrc").write_text(
+            "case $- in\n"
+            "    *i*) ;;\n"
+            "      *) return;;\n"
+            "esac\n"
+            'export PATH="$HOME/late-bashrc-addition:$PATH"\n'
+        )
+        self.marker_dir = str(home / "late-bashrc-addition")
+        self.base_env = {"HOME": str(home), "PATH": f"{self.marker_dir}:/usr/bin:/bin"}
+
+    def _run(self, command, env):
+        exe, args = shell.shell_command()
+        return subprocess.run(
+            [exe, *args, command], env=env, capture_output=True, text=True, timeout=10,
+        )
+
+    def test_plain_login_shell_loses_bashrc_only_path_addition(self):
+        """Demonstrates the bug: without the fix, a PATH entry that only
+        lives past ~/.bashrc's interactive guard doesn't survive a
+        non-interactive login shell, even though it's already in the
+        current process's own (inherited) PATH."""
+        result = self._run('echo "$PATH"', dict(self.base_env))
+        self.assertNotIn(self.marker_dir, result.stdout)
+
+    def test_wrap_command_restores_bashrc_only_path_addition(self):
+        """The fix: shell_env()/wrap_command() carry the current PATH
+        through a side-channel var and restore it after the login shell's
+        own startup files have had their say."""
+        env = shell.shell_env(self.base_env)
+        wrapped = shell.wrap_command('echo "$PATH"')
+        result = self._run(wrapped, env)
+        self.assertIn(self.marker_dir, result.stdout)
+
+    def test_wrap_command_never_introduces_empty_path_component(self):
+        """A missing/blank marker must never turn into a leading `:` --
+        POSIX shells treat an empty PATH component as `.` (cwd), which
+        would be a directory-planted-binary foothold."""
+        env = dict(self.base_env)
+        env.pop("_TUISTORE_LAUNCH_PATH", None)
+        result = self._run(shell.wrap_command('echo "$PATH"'), env)
+        self.assertFalse(result.stdout.startswith(":"))
+        self.assertNotIn("::", result.stdout)
 
 
 class TestWindowsInstallEngine(unittest.TestCase):

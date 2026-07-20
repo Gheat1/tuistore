@@ -28,13 +28,15 @@ import shutil
 import subprocess
 import sys
 
-from tuistore.shell import shell_command
+from tuistore.shell import shell_command, shell_env, wrap_command
 
 
 def _run(cmd: str) -> int:
     print(f"$ {cmd}")
     shell, shell_args = shell_command()
-    return subprocess.run([shell, *shell_args, cmd]).returncode
+    return subprocess.run(
+        [shell, *shell_args, wrap_command(cmd)], env=shell_env()
+    ).returncode
 
 
 def _confirm(prompt: str, assume_yes: bool) -> bool:
