@@ -455,6 +455,25 @@ async def enrich(entries: list[dict], chunk: int = 40) -> None:
 
 
 # ── 4/5. install methods ─────────────────────────────────────────────────────
+def has_method_kind(methods: list[dict], kind: str) -> bool:
+    """True if the methods list already has an entry of the given kind,
+    regardless of what its command string is."""
+    return any(m["kind"] == kind for m in methods)
+
+
+def dedupe_methods(methods: list[dict]) -> list[dict]:
+    """Dedupe by (kind, command), keeping the first occurrence — best source
+    wins by insertion order."""
+    seen = set()
+    deduped = []
+    for m in methods:
+        k = (m["kind"], m["command"])
+        if k not in seen:
+            seen.add(k)
+            deduped.append(m)
+    return deduped
+
+
 async def add_methods(entries: list[dict], scrape_top: int) -> None:
     # rank github entries by stars for scraping budget
     ranked = sorted(
@@ -491,20 +510,16 @@ async def add_methods(entries: list[dict], scrape_top: int) -> None:
         for m in infer_methods(e["url"], e.get("language")):
             methods.append(m.to_dict())
         # essentials get a homebrew method — they're almost all in brew, and it's
-        # what most people (and Mac users) reach for. Scraped brew, if any, wins.
-        if e.get("_essential"):
+        # what most people (and Mac users) reach for. Scraped brew, if any, wins:
+        # only guess one if nothing already scraped/inferred a brew method,
+        # since a real command (e.g. a tap-qualified install) won't string-match
+        # the naive guess below and must not be allowed to coexist with it.
+        if e.get("_essential") and not has_method_kind(methods, "brew"):
             owner, repo = parse_repo(e["url"])
             formula = ESSENTIAL_BREW.get(f"{owner}/{repo}", repo.lower())
             methods.append(make("brew", f"brew install {formula}",
                                 source="inferred", note="homebrew").to_dict())
-        # dedupe by (kind, command), keep first (best source wins by order)
-        seen = set()
-        deduped = []
-        for m in methods:
-            k = (m["kind"], m["command"])
-            if k not in seen:
-                seen.add(k)
-                deduped.append(m)
+        deduped = dedupe_methods(methods)
         if deduped:
             e["methods"] = deduped
 
