@@ -15,7 +15,7 @@ import base64
 import json
 import re
 
-from .installer import Method, classify, make, parse_repo
+from .installer import Method, arch_gated, classify, make, parse_repo
 
 # fenced ``` blocks and single-backtick inline code
 _FENCE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
@@ -24,7 +24,7 @@ _INLINE = re.compile(r"`([^`\n]+)`")
 # convention, e.g. `~$ cargo install ...`) directly before the prompt glyph —
 # without it, "~$ cargo install --git ...--force" scrapes with "~$" glued
 # onto the command, which then gets treated as a literal token downstream.
-_PROMPT = re.compile(r"^\s*(?:~[\w./-]*)?(?:\$|#|>|\xe2\x9d\xaf|❯|»)\s+")
+_PROMPT = re.compile(r"^\s*(?:~[\w./-]*)?(?:\$|#|>|\xe2\x9d\xaf|❯|»|▶)\s+")
 _MAXLEN = 400
 
 
@@ -59,7 +59,7 @@ def extract_methods(readme: str, url: str) -> list[Method]:
     for line in _iter_command_lines(readme):
         if len(line) > _MAXLEN:
             continue
-        kind = classify(line)
+        kind = classify(line, at_start=True)
         if not kind:
             continue
         low = line.lower()
@@ -73,7 +73,11 @@ def extract_methods(readme: str, url: str) -> list[Method]:
         cmd = re.sub(r"\s+", " ", line).strip()
         key = (kind, cmd)
         if key not in found:
-            found[key] = make(kind, cmd, source="readme", note="from README")
+            method = make(kind, cmd, source="readme", note="from README")
+            # a macOS `arch -arm64 ...` wrapper only runs on macOS — gate it.
+            if arch_gated(cmd):
+                method.os = ["macos"]
+            found[key] = method
         if len(found) >= 8:
             break
     return list(found.values())

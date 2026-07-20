@@ -1567,15 +1567,6 @@
    "pushed_at": "2025-12-15T17:20:36Z",
    "methods": [
     {
-     "kind": "docker",
-     "command": "alias dive=\"docker run -ti --rm -v /var/run/docker.sock:/var/run/docker.sock docker.io/wagoodman/dive\"",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
      "kind": "apt",
      "command": "sudo apt install ./dive_${DIVE_VERSION}_linux_amd64.deb",
      "source": "readme",
@@ -1764,15 +1755,6 @@
      ],
      "families": [
       "arch"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "echo \"alias lzd='docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v /yourpath/config:/.config/jesseduffield/lazydocker lazyteam/lazydocker'\" >> ~/.zshrc",
-     "source": "readme",
-     "requires": [
-      "docker"
      ],
      "note": "from README"
     },
@@ -2668,24 +2650,6 @@
    "pushed_at": "2026-07-19T12:27:46Z",
    "homepage": "https://jqlang.org",
    "methods": [
-    {
-     "kind": "docker",
-     "command": "docker run --rm -i ghcr.io/jqlang/jq:latest < package.json '.version'",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run --rm -i -v \"$PWD:$PWD\" -w \"$PWD\" ghcr.io/jqlang/jq:latest '.version' package.json",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
     {
      "kind": "source",
      "command": "git clone https://github.com/jqlang/jq && cd jq",
@@ -3662,42 +3626,6 @@
      "note": "from README"
     },
     {
-     "kind": "docker",
-     "command": "docker pull zricethezav/gitleaks:latest",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run -v ${path_to_host_folder_to_scan}:/path zricethezav/gitleaks:latest [COMMAND] [OPTIONS] [SOURCE_PATH]",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker pull ghcr.io/gitleaks/gitleaks:latest",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run -v ${path_to_host_folder_to_scan}:/path ghcr.io/gitleaks/gitleaks:latest [COMMAND] [OPTIONS] [SOURCE_PATH]",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
      "kind": "go",
      "command": "go install github.com/gitleaks/gitleaks@latest",
      "source": "inferred",
@@ -4379,24 +4307,6 @@
    "pushed_at": "2026-07-17T17:21:33Z",
    "methods": [
     {
-     "kind": "docker",
-     "command": "docker run --rm -v $PWD:/tmp aldanial/cloc .",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run --rm -v \"/$(pwd -W)\":/tmp aldanial/cloc .",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
      "kind": "source",
      "command": "git clone https://github.com/AlDanial/cloc && cd cloc",
      "source": "inferred",
@@ -4878,15 +4788,6 @@
      "note": "from README"
     },
     {
-     "kind": "docker",
-     "command": "docker run --rm -v $PWD:/vhs ghcr.io/charmbracelet/vhs <cassette>.tape",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
      "kind": "go",
      "command": "go install github.com/charmbracelet/vhs@latest",
      "source": "readme",
@@ -4962,15 +4863,6 @@
    "archived": false,
    "pushed_at": "2024-07-01T14:31:50Z",
    "methods": [
-    {
-     "kind": "docker",
-     "command": "docker run --rm -ti fathyb/carbonyl https://youtube.com",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
     {
      "kind": "npm",
      "command": "npm install --global carbonyl",
@@ -5148,15 +5040,6 @@
    "pushed_at": "2025-07-11T16:33:02Z",
    "homepage": "https://www.brow.sh",
    "methods": [
-    {
-     "kind": "docker",
-     "command": "docker run --rm -it browsh/browsh",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
     {
      "kind": "npm",
      "command": "npm install -g browsh",
@@ -5756,60 +5639,6 @@
      ],
      "os": [
       "linux"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run --rm -v \"${PWD}\":/workdir mikefarah/yq '.a.b[0].c' file.yaml",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "podman",
-     "command": "podman run --rm -v \"${PWD}\":/workdir mikefarah/yq '.a.b[0].c' file.yaml",
-     "source": "readme",
-     "requires": [
-      "podman"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run -i --rm mikefarah/yq '.this.thing' < myfile.yml",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "podman",
-     "command": "podman run -i --rm mikefarah/yq '.this.thing' < myfile.yml",
-     "source": "readme",
-     "requires": [
-      "podman"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run --rm -it -v \"${PWD}\":/workdir --entrypoint sh mikefarah/yq",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "podman",
-     "command": "podman run --rm -it -v \"${PWD}\":/workdir --entrypoint sh mikefarah/yq",
-     "source": "readme",
-     "requires": [
-      "podman"
      ],
      "note": "from README"
     },
@@ -6766,24 +6595,6 @@
      ],
      "families": [
       "gentoo"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run --rm -ti --network host ghcr.io/orf/gping:gping-v1.15.1 --help",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run --rm -ti --network host ghcr.io/orf/gping:gping-v1.15.1 google.com",
-     "source": "readme",
-     "requires": [
-      "docker"
      ],
      "note": "from README"
     },
@@ -7779,15 +7590,6 @@
      "note": "from README"
     },
     {
-     "kind": "docker",
-     "command": "sudo docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvtop",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
      "kind": "source",
      "command": "git clone https://github.com/Syllo/nvtop && cd nvtop",
      "source": "inferred",
@@ -7931,15 +7733,6 @@
    "archived": false,
    "pushed_at": "2026-07-11T09:13:26Z",
    "methods": [
-    {
-     "kind": "docker",
-     "command": "docker run --rm -it --network=host hatoo/oha:latest https://example.com:3000",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
     {
      "kind": "cargo",
      "command": "cargo install oha",
@@ -8543,15 +8336,6 @@
    "archived": false,
    "pushed_at": "2026-07-20T05:30:44Z",
    "methods": [
-    {
-     "kind": "docker",
-     "command": "docker run --rm -it -v \"$PWD:/pwd:ro\" --network none ghcr.io/boyter/scc:master scc /pwd",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
     {
      "kind": "go",
      "command": "go install github.com/boyter/scc/v3@latest",
@@ -10487,15 +10271,6 @@
      "note": "from README"
     },
     {
-     "kind": "docker",
-     "command": "docker run -it --rm -v $(pwd)/debug.json:/jnv/debug.json jnv /jnv/debug.json",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
      "kind": "cargo",
      "command": "cargo install jnv",
      "source": "readme",
@@ -11409,24 +11184,6 @@
      "source": "readme",
      "requires": [
       "go"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker pull ghcr.io/mr-karan/doggo:latest",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run --rm ghcr.io/mr-karan/doggo:latest example.com",
-     "source": "readme",
-     "requires": [
-      "docker"
      ],
      "note": "from README"
     },
@@ -17030,33 +16787,6 @@
      ],
      "families": [
       "gentoo"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker pull ghcr.io/lance0/ttl:latest",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run --rm -it ghcr.io/lance0/ttl 8.8.8.8",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
-    {
-     "kind": "docker",
-     "command": "docker run -d -p 9090:9090 ghcr.io/lance0/ttl --daemon --prometheus :9090 8.8.8.8",
-     "source": "readme",
-     "requires": [
-      "docker"
      ],
      "note": "from README"
     },
@@ -31918,15 +31648,6 @@
    "archived": false,
    "pushed_at": "2026-07-16T16:43:47Z",
    "methods": [
-    {
-     "kind": "docker",
-     "command": "docker run -it --rm -v ~/.ftb:/root/.ftb -v ~/:/mnt/host ftb",
-     "source": "readme",
-     "requires": [
-      "docker"
-     ],
-     "note": "from README"
-    },
     {
      "kind": "source",
      "command": "git clone https://github.com/Cyxuan0311/FTB && cd FTB",

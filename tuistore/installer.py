@@ -51,8 +51,6 @@ KINDS: dict[str, dict] = {
     "nix":      dict(label="nix profile install", pref=30, requires=["nix"]),
     "flatpak":  dict(label="flatpak install",     pref=31, requires=["flatpak"], os=["linux"]),
     "snap":     dict(label="snap install",        pref=32, requires=["snap"],    os=["linux"]),
-    "docker":   dict(label="docker",              pref=35, requires=["docker"]),
-    "podman":   dict(label="podman",              pref=36, requires=["podman"]),
     # Windows package managers
     "scoop":    dict(label="scoop install",       pref=37, requires=["scoop"],    os=["windows"]),
     "choco":    dict(label="choco install",       pref=38, requires=["choco"],    os=["windows"]),
@@ -248,8 +246,6 @@ _CLASSIFY = [
     ("flatpak", re.compile(r"\bflatpak\s+install\b")),
     ("snap", re.compile(r"\bsnap\s+install\b")),
     ("brew", re.compile(r"\bbrew\s+install\b")),
-    ("docker", re.compile(r"\bdocker\s+(?:run|pull)\b")),
-    ("podman", re.compile(r"\bpodman\s+(?:run|pull)\b")),
     ("scoop", re.compile(r"\bscoop\s+install\b")),
     ("choco", re.compile(r"\bchoco(?:latey)?\s+install\b")),
     ("winget", re.compile(r"\bwinget\s+install\b")),
@@ -259,12 +255,40 @@ _CLASSIFY = [
 ]
 
 
-def classify(command: str) -> str | None:
-    """Best-guess the kind of a raw shell install command, or None."""
+# leading tokens allowed *before* the install verb on a real command line:
+# sudo/doas/env, `VAR=val` env assignments (bare or quoted, e.g.
+# FOO='-C bar'), a macOS `arch -arm64` wrapper, and a prior chained command
+# ("apt update && ", "zypper ref; ") — a two-step update-then-install line
+# is a normal, copy-pasteable install command, not prose. Anything else
+# before the verb (e.g. "or: ", "alias x=") still is.
+_CMD_PREFIX = re.compile(
+    r"^\s*(?:\S.*?(?:&&|;)\s+)?"
+    r"(?:(?:sudo|doas|env)(?:\s+-\S+)*\s+|"
+    r"[A-Za-z_][A-Za-z0-9_]*=(?:'[^']*'|\"[^\"]*\"|\S+)\s+|arch\s+-\S+\s+)*$"
+)
+_ARCH_WRAP = re.compile(
+    r"^\s*(?:(?:sudo|doas|env)(?:\s+-\S+)*\s+|"
+    r"[A-Za-z_][A-Za-z0-9_]*=(?:'[^']*'|\"[^\"]*\"|\S+)\s+)*arch\s+-(?:arm64|x86_64|i386)\b"
+)
+
+
+def classify(command: str, *, at_start: bool = False) -> str | None:
+    """Best-guess the kind of a raw shell install command, or None.
+
+    With ``at_start=True`` the install verb must begin the line (bar a
+    sudo/env/arch prefix) — so prose like ``or: bun add -g x`` or an
+    ``alias foo=...`` line is rejected rather than scraped as an installer.
+    """
     for kind, rx in _CLASSIFY:
-        if rx.search(command):
+        m = rx.search(command)
+        if m and (not at_start or _CMD_PREFIX.fullmatch(command[: m.start()])):
             return kind
     return None
+
+
+def arch_gated(command: str) -> bool:
+    """True if the command is wrapped in a macOS-only ``arch -arch`` prefix."""
+    return bool(_ARCH_WRAP.match(command))
 
 
 # ── infer install methods from repo language ───────────────────────────────

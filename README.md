@@ -6,7 +6,7 @@
 
 Browse a curated catalog of TUIs, read the details, and install with a single
 key — tuistore figures out *how* to install each one on **your** machine
-(cargo, brew, pacman, uv, go, docker…) so you never paste a command your box
+(cargo, brew, pacman, uv, go, npm…) so you never paste a command your box
 can't run. Star the ones you love straight to GitHub.
 
 

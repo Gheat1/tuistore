@@ -26,7 +26,7 @@ from ricekit.widgets import KitScroll, NavList, Splitter, pop_in
 
 from . import __version__, github, installed as inst, platform
 from .catalog import Catalog, Entry, load, refetch, search
-from .installer import Method, best, rank, run_stream
+from .installer import KINDS, Method, best, rank, run_stream
 from .paths import StoreDirs
 
 DIRS = StoreDirs()
@@ -381,7 +381,7 @@ class FeaturesModal(ModalScreen):
              "seeded from awesome-tuis + Gheat's own suite, grouped into browsable categories.")
         feat(icons.PLUG, "one-key install that fits your box",
              "detects your OS, distro and package managers, then offers only commands you can run —")
-        t.append("      pacman on Arch, brew on mac, cargo where cargo is, docker where docker is.\n\n",
+        t.append("      pacman on Arch, brew on mac, apt on Debian, cargo where cargo is.\n\n",
                  style=p.dim)
         feat(icons.STAR, "star from the store",
              "found something great? press s to star it on GitHub (via your gh login).")
@@ -1356,7 +1356,8 @@ class StoreApp(KitApp):
             self._scraped.add(slug)
             cached = DIRS.read_cache(f"methods_{owner}_{repo}")
             if cached and cached.get("methods"):
-                found = [Method.from_dict(m) for m in cached["methods"]]
+                found = [Method.from_dict(m) for m in cached["methods"]
+                         if m.get("kind") in KINDS]
             else:
                 from .scrape import scrape_repo
                 found = await scrape_repo(entry.url)

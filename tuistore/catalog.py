@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from importlib import resources
 
-from .installer import Method, parse_repo
+from .installer import KINDS, Method, parse_repo
 from .paths import user_data_dir
 
 
@@ -82,7 +82,8 @@ class Entry:
             homepage=d.get("homepage"),
             featured=d.get("featured", False),
             author_note=d.get("author_note", ""),
-            methods=[Method.from_dict(m) for m in d.get("methods", [])],
+            methods=[Method.from_dict(m) for m in d.get("methods", [])
+                     if m.get("kind") in KINDS],
         )
 
 
