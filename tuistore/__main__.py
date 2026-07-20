@@ -435,7 +435,6 @@ def main() -> None:
 
     a0 = argv[0].lower()
     rest = argv[1:]
-    a1 = rest[0].lower() if rest else ""
 
     if a0 in ("--version", "-v"):
         from . import __version__
@@ -454,12 +453,17 @@ def main() -> None:
     elif a0 in ("info", "show"):
         sys.exit(_cmd_info(rest))
     elif a0 in ("update", "upgrade"):
-        if a1 in ("installed", "tools"):
+        # The tool name (or a special token) may not be rest[0] — flags like
+        # "-y" can precede it, e.g. `tuistore update -y ripgrep`. Scan for the
+        # first argument that isn't a flag rather than only checking rest[0].
+        tool_arg = next((t for t in rest if not t.startswith("-")), None)
+        tool_arg_lower = tool_arg.lower() if tool_arg else ""
+        if tool_arg_lower in ("installed", "tools"):
             sys.exit(_update_installed())
-        if a1 in ("everything", "system", "all"):
+        if tool_arg_lower in ("everything", "system", "all"):
             sys.exit(_system_upgrade())
-        if a1 and not a1.startswith("-"):
-            sys.exit(_update_named(rest[0]))
+        if tool_arg:
+            sys.exit(_update_named(tool_arg))
         # bare `upgrade` = everything on the machine; bare `update` = tuistore
         sys.exit(_system_upgrade() if a0 == "upgrade" else _update_self())
     elif a0 in ("update-installed", "update_installed"):
