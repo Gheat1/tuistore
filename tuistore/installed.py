@@ -86,6 +86,17 @@ _NOISE = {
 _CARGO_VALUE_FLAGS = {"--git", "--branch", "--tag", "--rev", "--path", "--version", "--features"}
 
 
+def _strip_version_pin(token: str) -> str:
+    """Drop a trailing "@version" pin without mistaking a leading "@" npm/jsr
+    scope marker for one, e.g. "pkg@1.2.3" -> "pkg", "@openai/codex" ->
+    unchanged, "@openai/codex@1.2.3" -> "@openai/codex" (strip only the
+    *second* "@", not the first)."""
+    if token.startswith("@"):
+        at = token.find("@", 1)
+        return token if at == -1 else token[:at]
+    return token.split("@", 1)[0]
+
+
 def _cargo_pkg(command: str) -> str | None:
     """Crate name from a `cargo install` command. Git-aware: `--git <url>`
     installs have no crate name in the command line at all (that lives in the
@@ -111,7 +122,7 @@ def _cargo_pkg(command: str) -> str | None:
             continue
         if t.lower() in _NOISE or t.startswith("-"):
             continue
-        return t.split("@")[0]
+        return _strip_version_pin(t)
     return None
 
 
@@ -130,13 +141,13 @@ def pkg_from_command(kind: str, command: str) -> str | None:
         # go install github.com/owner/repo/cmd/tool@latest -> "tool"
         for t in cands:
             if "/" in t or "@" in t:
-                return t.split("@")[0].rstrip("/").split("/")[-1]
-        return cands[-1].split("@")[0] if cands else None
+                return _strip_version_pin(t).rstrip("/").split("/")[-1]
+        return _strip_version_pin(cands[-1]) if cands else None
     # drop bare URLs for non-go managers
     cands = [t for t in cands if not t.startswith("http")]
     if not cands:
         return None
-    pkg = cands[0].split("@")[0]
+    pkg = _strip_version_pin(cands[0])
     # a tap-qualified brew formula (user/tap/formula) installs with the full
     # path but updates/uninstalls with the bare formula name.
     if kind == "brew" and "/" in pkg:
