@@ -1,6 +1,14 @@
+import asyncio
+import sys
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
-from tools.build_catalog import dedupe_methods, has_method_kind
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from tools import build_catalog  # noqa: E402
+from tools.build_catalog import dedupe_methods, has_method_kind  # noqa: E402
 from tuistore.installer import make
 
 
@@ -69,6 +77,51 @@ class GuessedBrewFallbackDedupeTest(unittest.TestCase):
         deduped = dedupe_methods([m1, m2])
 
         self.assertEqual(deduped, [m1])
+
+
+class FeaturedScrapeBudgetTest(unittest.TestCase):
+    def test_featured_entries_never_consume_a_scrape_budget_slot(self) -> None:
+        # Two high-star featured entries used to be ranked alongside real
+        # entries, sliced into the top-N scrape budget, and only *then*
+        # excluded for being featured — leaving their slots unused instead
+        # of falling through to the next real candidate. With a budget of
+        # 2 and featured-a/featured-b ranked #1 and #2 by stars, the buggy
+        # version scraped nothing at all even though real-1..real-3 were
+        # available to fill the budget.
+        entries = [
+            dict(name="featured-a", url="https://github.com/org/featured-a",
+                 stars=9000, featured=True),
+            dict(name="featured-b", url="https://github.com/org/featured-b",
+                 stars=8000, featured=True),
+            dict(name="real-1", url="https://github.com/org/real-1", stars=500),
+            dict(name="real-2", url="https://github.com/org/real-2", stars=400),
+            dict(name="real-3", url="https://github.com/org/real-3", stars=300),
+        ]
+
+        scraped_urls: list[str] = []
+
+        async def fake_scrape_repo(url: str) -> list:
+            scraped_urls.append(url)
+            return []
+
+        with patch.object(build_catalog.scrape, "scrape_repo", fake_scrape_repo):
+            asyncio.run(build_catalog.add_methods(entries, scrape_top=2))
+
+        # The budget of 2 must be fully spent on real candidates (the two
+        # highest-starred non-featured entries), not silently shrunk by the
+        # featured entries occupying and then vacating ranking slots.
+        self.assertEqual(
+            sorted(scraped_urls),
+            sorted([
+                "https://github.com/org/real-1",
+                "https://github.com/org/real-2",
+            ]),
+        )
+        self.assertEqual(len(scraped_urls), 2)
+
+        # Featured entries never get scraped regardless of star rank.
+        self.assertNotIn("https://github.com/org/featured-a", scraped_urls)
+        self.assertNotIn("https://github.com/org/featured-b", scraped_urls)
 
 
 if __name__ == "__main__":

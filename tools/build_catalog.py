@@ -475,14 +475,17 @@ def dedupe_methods(methods: list[dict]) -> list[dict]:
 
 
 async def add_methods(entries: list[dict], scrape_top: int) -> None:
-    # rank github entries by stars for scraping budget
+    # rank github entries by stars for scraping budget. Featured entries are
+    # excluded here, before the top-N slice is taken, so one of them ranking
+    # highly can't occupy a budget slot that then goes unused — the next
+    # real (non-featured) candidate must be able to fill it instead.
+    # Featured tools keep only their hand-curated official methods — no
+    # scraped/inferred noise (e.g. a monorepo README's sibling-package installs)
     ranked = sorted(
-        (e for e in entries if parse_repo(e["url"])),
+        (e for e in entries if parse_repo(e["url"]) and not e.get("featured")),
         key=lambda e: -(e.get("stars") or 0),
     )
-    # featured tools keep only their hand-curated official methods — no
-    # scraped/inferred noise (e.g. a monorepo README's sibling-package installs)
-    scrape_set = {id(e) for e in ranked[:scrape_top] if not e.get("featured")}
+    scrape_set = {id(e) for e in ranked[:scrape_top]}
     # always scrape the hand-picked essentials so they get verified installs
     scrape_set |= {id(e) for e in entries if e.get("_essential")}
 
