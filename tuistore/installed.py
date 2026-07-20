@@ -85,6 +85,33 @@ _NOISE = {
 # cargo flags that take a following value — the value is never the crate name
 _CARGO_VALUE_FLAGS = {"--git", "--branch", "--tag", "--rev", "--path", "--version", "--features"}
 
+# pip/uv/pipx VCS install specs (PEP 440 direct references), e.g.
+# "git+https://github.com/owner/repo", "git+ssh://git@host/owner/repo.git@branch"
+_VCS_PREFIXES = ("git+", "hg+", "svn+", "bzr+")
+
+
+def _vcs_repo_name(url: str) -> str | None:
+    """Repo name from a VCS install spec — the same "best available guess"
+    used for `cargo install --git`, since a VCS URL carries no package name
+    of its own on the command line (that lives in the remote project's
+    metadata, which we don't fetch). Strips the `git+` scheme prefix, any
+    `#egg=...`/query fragment, and an `@ref` (branch/tag/commit) suffix —
+    but not an `ssh://user@host` authority, which sits before the final
+    `/repo` segment and is left untouched."""
+    for prefix in _VCS_PREFIXES:
+        if url.startswith(prefix):
+            url = url[len(prefix):]
+            break
+    url = url.split("#", 1)[0].split("?", 1)[0]
+    head, sep, tail = url.rpartition("/")
+    if sep and "@" in tail:
+        tail = tail.split("@", 1)[0]
+    url = f"{head}/{tail}" if sep else tail
+    repo = url.rstrip("/").rsplit("/", 1)[-1]
+    if repo.endswith(".git"):
+        repo = repo[:-4]
+    return repo or None
+
 
 def _strip_version_pin(token: str) -> str:
     """Drop a trailing "@version" pin without mistaking a leading "@" npm/jsr
@@ -143,9 +170,17 @@ def pkg_from_command(kind: str, command: str) -> str | None:
             if "/" in t or "@" in t:
                 return _strip_version_pin(t).rstrip("/").split("/")[-1]
         return _strip_version_pin(cands[-1]) if cands else None
-    # drop bare URLs for non-go managers
-    cands = [t for t in cands if not t.startswith("http")]
+    # drop bare URLs and VCS install specs (git+https://..., git+ssh://...)
+    # for non-go managers — neither is a valid package name to feed back into
+    # an uninstall/upgrade command. A VCS spec still gets a best-effort repo
+    # name (see _vcs_repo_name); a bare URL just falls through to the next
+    # candidate, or None if it was the only token.
+    urls = [t for t in cands if t.startswith("http") or t.startswith(_VCS_PREFIXES)]
+    cands = [t for t in cands if t not in urls]
     if not cands:
+        for t in urls:
+            if t.startswith(_VCS_PREFIXES):
+                return _vcs_repo_name(t)
         return None
     pkg = _strip_version_pin(cands[0])
     # a tap-qualified brew formula (user/tap/formula) installs with the full
