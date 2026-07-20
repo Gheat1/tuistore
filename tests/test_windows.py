@@ -117,6 +117,14 @@ class TestShellPathRestoration(unittest.TestCase):
     """
 
     def setUp(self):
+        if os.name == "nt":
+            # shell_command() never returns bash on Windows (pwsh/powershell/
+            # cmd.exe instead, where wrap_command() is a documented no-op) —
+            # this class tests POSIX login-shell startup semantics that
+            # simply don't apply there. A "bash" may still be on PATH via
+            # Git Bash on Windows runners, but shell_command() ignores it,
+            # so checking for its mere presence isn't the right gate.
+            self.skipTest("POSIX-only: shell_command() doesn't use bash on Windows")
         bash = shutil.which("bash")
         if not bash:
             self.skipTest("bash not available")
