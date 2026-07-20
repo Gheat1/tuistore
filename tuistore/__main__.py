@@ -303,6 +303,19 @@ def _cmd_info(args: list[str]) -> int:
 # ── existing verbs ──────────────────────────────────────────────────────────
 _SELF_SRC = "git+https://github.com/Gheat1/tuistore"
 
+# Known Homebrew install prefixes (macOS Apple Silicon, macOS Intel, Linuxbrew).
+# A real Homebrew install always resolves to <prefix>/Cellar/<formula>/....
+_HOMEBREW_PREFIXES = ("/opt/homebrew/", "/usr/local/", "/home/linuxbrew/.linuxbrew/")
+
+
+def _is_homebrew_cellar_path(low_path: str) -> bool:
+    """True only for a path shaped like a real Homebrew Cellar install —
+    a `Cellar` directory component directly under a known Homebrew prefix —
+    not merely any path that happens to contain "cellar" as a substring
+    (e.g. a project or backup directory named "mycellar-backups")."""
+    normalized = low_path.replace("\\", "/")  # tolerate a resolve()'d Windows-style path
+    return any(normalized.startswith(prefix + "cellar/") for prefix in _HOMEBREW_PREFIXES)
+
 
 def _how_installed() -> str:
     """Guess which manager owns the running `tuistore`, from its resolved
@@ -314,7 +327,7 @@ def _how_installed() -> str:
     except OSError:
         pass
     low = path.lower()
-    if "cellar" in low or "linuxbrew" in low:
+    if _is_homebrew_cellar_path(low):
         return "brew"
     if "/uv/tools/" in low or "\\uv\\tools\\" in low:
         return "uv"
