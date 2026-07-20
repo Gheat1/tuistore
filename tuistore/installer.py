@@ -259,12 +259,32 @@ _CLASSIFY = [
 ]
 
 
-def classify(command: str) -> str | None:
-    """Best-guess the kind of a raw shell install command, or None."""
+# leading tokens allowed *before* the install verb on a real command line:
+# sudo/doas, `VAR=val` env assignments, and a macOS `arch -arm64` wrapper.
+# Anything else before the verb (e.g. "or: ", "alias x=") is prose, not a command.
+_CMD_PREFIX = re.compile(
+    r"^(?:\s*|sudo\s+|doas\s+|[A-Za-z_][A-Za-z0-9_]*=\S+\s+|arch\s+-\S+\s+)*$"
+)
+_ARCH_WRAP = re.compile(r"^\s*arch\s+-(?:arm64|x86_64|i386)\b")
+
+
+def classify(command: str, *, at_start: bool = False) -> str | None:
+    """Best-guess the kind of a raw shell install command, or None.
+
+    With ``at_start=True`` the install verb must begin the line (bar a
+    sudo/env/arch prefix) — so prose like ``or: bun add -g x`` or an
+    ``alias foo=...`` line is rejected rather than scraped as an installer.
+    """
     for kind, rx in _CLASSIFY:
-        if rx.search(command):
+        m = rx.search(command)
+        if m and (not at_start or _CMD_PREFIX.fullmatch(command[: m.start()])):
             return kind
     return None
+
+
+def arch_gated(command: str) -> bool:
+    """True if the command is wrapped in a macOS-only ``arch -arch`` prefix."""
+    return bool(_ARCH_WRAP.match(command))
 
 
 # ── infer install methods from repo language ───────────────────────────────
