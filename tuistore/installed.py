@@ -14,12 +14,14 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import shlex
 import subprocess
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
-from .installer import Method
+from .installer import _CLASSIFY, Method
 from .paths import user_data_dir
 
 LEDGER = user_data_dir() / "installed.json"
@@ -95,6 +97,26 @@ _NOISE = {
 # cargo flags that take a following value — the value is never the crate name
 _CARGO_VALUE_FLAGS = {"--git", "--branch", "--tag", "--rev", "--path", "--version", "--features"}
 
+# Python-manager flags whose following token is a value, not the package.
+# Not exhaustive of every pip/uv flag — covers the ones plausible in a
+# README's one-line install instructions. An unlisted value-taking flag
+# still fails safely rather than silently: its value either starts with
+# "/" (a path, e.g. an uncovered --some-dir flag) and is rejected by
+# _SAFE_TARGET, or is itself flag-shaped and already excluded — the real
+# risk this list exists to close is a flag value that *looks* like a
+# package name (e.g. --resolution lowest).
+_VALUE_FLAGS = {
+    "--python", "--with", "--index", "--index-url", "--extra-index-url",
+    "-c", "--constraint", "-r", "--requirement", "--target", "--prefix",
+    "--root", "--resolution", "--python-preference", "-f", "--find-links",
+}
+
+_SAFE_NAME = re.compile(r"^[A-Za-z0-9@][A-Za-z0-9@/#:._+-]*$")
+_SAFE_TARGET = re.compile(
+    r"^[A-Za-z0-9@][A-Za-z0-9@/#:._+-]*(?:\[[A-Za-z0-9,._+-]+\])?$"
+)
+_SAFE_BIN = re.compile(r"^[A-Za-z0-9@][A-Za-z0-9._+-]*$")
+
 # pip/uv/pipx VCS install specs (PEP 440 direct references), e.g.
 # "git+https://github.com/owner/repo", "git+ssh://git@host/owner/repo.git@branch"
 _VCS_PREFIXES = ("git+", "hg+", "svn+", "bzr+")
@@ -163,23 +185,49 @@ def _cargo_pkg(command: str) -> str | None:
     return None
 
 
-def pkg_from_command(kind: str, command: str) -> str | None:
-    """Best-effort package / target name from an install command."""
+def _extract_target(kind: str, command: str) -> str | None:
+    """Install target after the recorded manager's install verb.
+
+    Anchoring on installer._CLASSIFY skips wrappers and earlier chained
+    commands without duplicating its shell grammar. The final allowlist is
+    the safety boundary for scraped or malformed command strings.
+    """
     if kind in ("script", "source"):
         return None
+    rx = dict(_CLASSIFY).get(kind)
+    match = rx.search(command) if rx else None
+    args = command[match.end():] if match else command
     if kind in ("cargo", "cargo-binstall"):
-        return _cargo_pkg(command)
-    tokens = command.replace("&&", " ").split()
-    cands = [
-        t for t in tokens
-        if t.lower() not in _NOISE and not t.startswith("-")
-    ]
+        target = _cargo_pkg(args)
+        return target if target and _SAFE_TARGET.fullmatch(target) else None
+    try:
+        tokens = shlex.split(args)
+    except ValueError:
+        tokens = args.split()
+    cands = []
+    skip_next = False
+    for token in tokens:
+        if skip_next:
+            skip_next = False
+            continue
+        if kind in {"uv", "uv-pip", "pipx", "pip"} and token in _VALUE_FLAGS:
+            skip_next = True
+            continue
+        if token.lower() not in _NOISE and not token.startswith("-"):
+            cands.append(token)
     if kind == "go":
         # go install github.com/owner/repo/cmd/tool@latest -> "tool"
         for t in cands:
             if "/" in t or "@" in t:
-                return _strip_version_pin(t).rstrip("/").split("/")[-1]
-        return _strip_version_pin(cands[-1]) if cands else None
+                parts = _strip_version_pin(t).rstrip("/").split("/")
+                target = parts[-1]
+                # ponytail: Go /vN suffix only; remote metadata is needed for
+                # other module-path/binary mismatches.
+                if re.fullmatch(r"v\d+", target) and len(parts) > 1:
+                    target = parts[-2]
+                return target if _SAFE_TARGET.fullmatch(target) else None
+        target = _strip_version_pin(cands[-1]) if cands else None
+        return target if target and _SAFE_TARGET.fullmatch(target) else None
     # drop bare URLs and VCS install specs (git+https://..., git+ssh://...)
     # for non-go managers — neither is a valid package name to feed back into
     # an uninstall/upgrade command. A VCS spec still gets a best-effort repo
@@ -190,14 +238,22 @@ def pkg_from_command(kind: str, command: str) -> str | None:
     if not cands:
         for t in urls:
             if t.startswith(_VCS_PREFIXES):
-                return _vcs_repo_name(t)
+                target = _vcs_repo_name(t)
+                return target if target and _SAFE_TARGET.fullmatch(target) else None
         return None
-    pkg = _strip_version_pin(cands[0])
+    target = _strip_version_pin(cands[0])
     # a tap-qualified brew formula (user/tap/formula) installs with the full
     # path but updates/uninstalls with the bare formula name.
-    if kind == "brew" and "/" in pkg:
-        pkg = pkg.split("/")[-1]
-    return pkg
+    if kind == "brew" and "/" in target:
+        target = target.split("/")[-1]
+    return target if _SAFE_TARGET.fullmatch(target) else None
+
+
+def pkg_from_command(kind: str, command: str) -> str | None:
+    """Safe bare package name for lifecycle commands and comparisons."""
+    target = _extract_target(kind, command)
+    pkg = target.partition("[")[0] if target else None
+    return pkg if pkg and _SAFE_NAME.fullmatch(pkg) else None
 
 
 # ── update / uninstall command derivation ───────────────────────────────────
@@ -268,15 +324,21 @@ _UPDATE = {
 
 
 def uninstall_command(rec: dict) -> str | None:
-    kind, pkg, binn = rec.get("kind", ""), rec.get("pkg", ""), rec.get("bin", "")
+    kind = rec.get("kind", "")
+    pkg = pkg_from_command(kind, rec.get("command", "")) or rec.get("pkg", "")
+    binn = rec.get("bin", "") or pkg
     tmpl = _UNINSTALL.get(kind)
-    if not tmpl or not (pkg or binn):
+    if (not tmpl or not pkg or not _SAFE_NAME.fullmatch(pkg)
+            or "{bin}" in tmpl and (not binn or not _SAFE_BIN.fullmatch(binn))):
         return None
-    return tmpl.format(pkg=pkg or binn, bin=binn or pkg)
+    return tmpl.format(pkg=pkg, bin=binn)
 
 
 def update_command(rec: dict) -> str | None:
-    kind, pkg = rec.get("kind", ""), rec.get("pkg", "")
+    kind = rec.get("kind", "")
+    pkg = pkg_from_command(kind, rec.get("command", "")) or rec.get("pkg", "")
+    if not pkg or not _SAFE_NAME.fullmatch(pkg):
+        return None
     if kind == "go":
         # re-run the original `go install …@latest`
         return rec.get("command")

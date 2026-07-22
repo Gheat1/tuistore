@@ -1,6 +1,8 @@
 import unittest
+from types import SimpleNamespace
 
-from tuistore.catalog import Entry, _prefer_uv
+from tuistore.app import StoreApp
+from tuistore.catalog import Entry, _bundled_text, _parse, _prefer_uv
 from tuistore.installed import pkg_from_command, uninstall_command, update_command
 from tuistore.installer import KINDS, classify, force_variant, make
 from tuistore.platform import Env
@@ -107,6 +109,78 @@ class TestClassifyUvPip(unittest.TestCase):
         uv_methods = [m for m in entry.methods if m.kind == "uv"]
         self.assertEqual(len(uv_methods), 1)
         self.assertEqual(uv_methods[0].command, "uv tool install ruff")
+
+
+class TestPackageParsingPipeline(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        raw = _bundled_text()
+        assert raw is not None
+        cls.entries = {entry.name: entry for entry in _parse(raw).entries}
+
+    def test_posting_preserves_pinned_uv_install_and_lifecycle_target(self):
+        method = self.entries["posting"].methods[0]
+        self.assertEqual(method.command, "uv tool install --python 3.13 posting")
+        rec = {"kind": method.kind, "command": method.command, "pkg": "3.13"}
+        self.assertEqual(uninstall_command(rec), "uv tool uninstall posting")
+        self.assertEqual(update_command(rec), "uv tool upgrade posting")
+
+    def test_thefuck_quirk_keeps_lifecycle_target(self):
+        method = self.entries["thefuck"].methods[0]
+        self.assertEqual(method.command, "uv tool install --python 3.11 thefuck")
+        rec = {"kind": method.kind, "command": method.command, "pkg": "3.11"}
+        self.assertEqual(uninstall_command(rec), "uv tool uninstall thefuck")
+        self.assertEqual(update_command(rec), "uv tool upgrade thefuck")
+
+    def test_yt_dlp_keeps_quoted_extras_and_winner_metadata(self):
+        method = self.entries["yt-dlp"].methods[0]
+        self.assertEqual(method.command, "uv tool install 'yt-dlp[default]'")
+        self.assertEqual(method.source, "readme")
+        self.assertEqual(method.note, "from README")
+        self.assertEqual(method.requires, ["uv"])
+        rec = {"kind": method.kind, "command": method.command, "pkg": '"yt-dlp[default]"'}
+        self.assertEqual(uninstall_command(rec), "uv tool uninstall yt-dlp")
+        self.assertEqual(update_command(rec), "uv tool upgrade yt-dlp")
+
+    def test_manage_candidates_compares_extras_as_bare_name(self):
+        entry = Entry(name="yt-dlp", url="https://github.com/yt-dlp/yt-dlp")
+        entry.methods = [make("pip", 'pip install "yt-dlp[default]"', source="readme")]
+        app = SimpleNamespace(env=Env("linux", "ubuntu", {"debian"}, tools={"pip3"}))
+        self.assertEqual(
+            StoreApp._manage_candidates(app, entry, "update"),
+            [("pip", "python3 -m pip install -U yt-dlp")],
+        )
+
+
+class TestPreferUvIntegrity(unittest.TestCase):
+    def test_uv_winner_object_and_metadata_are_preserved(self):
+        winner = make("uv", "uv tool install --python 3.13 posting", source="readme", note="pinned")
+        winner.os, winner.families = ["linux"], ["debian"]
+        inferred = make("uv", "uv tool install posting", note="guess")
+        entry = Entry(name="posting", url="https://github.com/darrenburns/posting",
+                      methods=[winner, inferred])
+        _prefer_uv(entry)
+        self.assertIs(entry.methods[0], winner)
+        self.assertEqual([m for m in entry.methods if m.kind == "uv"], [winner])
+        self.assertEqual((winner.note, winner.os, winner.families),
+                         ("pinned", ["linux"], ["debian"]))
+
+    def test_pip_winner_translation_uses_uv_requirements_and_metadata(self):
+        winner = make("pip", 'pip install "yt-dlp[default]"', source="readme", note="from README")
+        winner.os, winner.families = ["linux"], ["debian"]
+        entry = Entry(name="yt-dlp", url="https://github.com/yt-dlp/yt-dlp", methods=[winner])
+        _prefer_uv(entry)
+        method = entry.methods[0]
+        self.assertEqual(method.command, "uv tool install 'yt-dlp[default]'")
+        self.assertEqual(method.requires, ["uv"])
+        self.assertEqual((method.source, method.note, method.os, method.families),
+                         ("readme", "from README", ["linux"], ["debian"]))
+
+    def test_invalid_pip_target_is_not_synthesized(self):
+        winner = make("pip", "pip install 'bad;target'", source="readme")
+        entry = Entry(name="bad", url="https://github.com/owner/bad", methods=[winner])
+        _prefer_uv(entry)
+        self.assertEqual(entry.methods, [winner])
 
 
 class ClassifyScriptTest(unittest.TestCase):

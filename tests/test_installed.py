@@ -4,9 +4,11 @@ from pathlib import Path
 from unittest import mock
 
 from tuistore.installed import (
+    _extract_target,
     load_ledger,
     pkg_from_command,
     record_install,
+    status,
     system_upgrade_command,
     uninstall_command,
     update_command,
@@ -133,6 +135,135 @@ class TestPkgFromCommandRegularPackages(unittest.TestCase):
     def test_brew_tap_qualified_formula(self):
         self.assertEqual(
             pkg_from_command("brew", "brew install user/tap/formula"), "formula"
+        )
+
+
+class TestManagerAwarePackageParsing(unittest.TestCase):
+    def test_install_verb_anchors_and_aliases(self):
+        cases = [
+            ("eopkg", "eopkg install foo", "foo"),
+            ("eopkg", "eopkg it foo", "foo"),
+            ("nix", "nix-env -i bat", "bat"),
+            ("brew", "brew tap user/tap && brew install cwal", "cwal"),
+            ("zypper", "zypper ref && zypper in lazygit", "lazygit"),
+            ("apt", "sudo apt update; sudo apt install bat", "bat"),
+        ]
+        for kind, command, expected in cases:
+            with self.subTest(command=command):
+                self.assertEqual(pkg_from_command(kind, command), expected)
+
+    def test_wrappers_and_assignments_before_install_verb(self):
+        cases = [
+            ("brew", "sudo arch -arm64 brew install yq", "yq"),
+            ("cargo", "FOO='-C bar' cargo install yq --locked", "yq"),
+            ("go", "env GOFLAGS=-mod=mod go install github.com/mikefarah/yq/v4@latest", "yq"),
+        ]
+        for kind, command, expected in cases:
+            with self.subTest(command=command):
+                self.assertEqual(pkg_from_command(kind, command), expected)
+
+    def test_python_value_flags_are_not_targets(self):
+        self.assertEqual(
+            pkg_from_command("uv", "uv tool install --python 3.13 posting"),
+            "posting",
+        )
+
+    def test_other_value_flags_are_not_targets_either(self):
+        # _VALUE_FLAGS only lists the flags plausible in a real README, not
+        # every pip/uv flag — these are the ones outside --python that would
+        # otherwise reproduce the same "flag value mistaken for the package"
+        # bug this PR fixes.
+        cases = [
+            ("pip", "pip install --target /custom/dir mypackage", "mypackage"),
+            ("pip", "pip install -r requirements.txt somepkg", "somepkg"),
+            ("pip", "pip install --prefix /usr/local mypackage", "mypackage"),
+            ("uv", "uv tool install --python-preference only-managed mypackage", "mypackage"),
+            ("uv", "uv tool install --resolution lowest mypackage", "mypackage"),
+        ]
+        for kind, command, expected in cases:
+            with self.subTest(command=command):
+                self.assertEqual(pkg_from_command(kind, command), expected)
+
+    def test_extras_are_kept_for_install_and_stripped_for_lifecycle(self):
+        command = 'pip install "yt-dlp[default]"'
+        self.assertEqual(_extract_target("pip", command), "yt-dlp[default]")
+        self.assertEqual(pkg_from_command("pip", command), "yt-dlp")
+
+
+class TestLifecycleSafetyAndRepair(unittest.TestCase):
+    def test_eopkg_lifecycle_targets_package(self):
+        for command in ("eopkg install foo", "eopkg it foo"):
+            rec = {"kind": "eopkg", "command": command, "pkg": "eopkg"}
+            with self.subTest(command=command):
+                self.assertEqual(uninstall_command(rec), "sudo eopkg remove foo")
+                self.assertEqual(update_command(rec), "sudo eopkg upgrade foo")
+
+    def test_lifecycle_rederives_and_repairs_corrupt_pkg(self):
+        cases = [
+            (
+                {"kind": "uv", "command": "uv tool install --python 3.11 thefuck", "pkg": "3.11"},
+                "uv tool uninstall thefuck",
+                "uv tool upgrade thefuck",
+            ),
+            (
+                {"kind": "uv", "command": 'uv tool install "yt-dlp[default]"', "pkg": '"yt-dlp[default]"'},
+                "uv tool uninstall yt-dlp",
+                "uv tool upgrade yt-dlp",
+            ),
+        ]
+        for rec, uninstall, update in cases:
+            with self.subTest(command=rec["command"]):
+                self.assertEqual(uninstall_command(rec), uninstall)
+                self.assertEqual(update_command(rec), update)
+
+    def test_commandless_record_falls_back_to_pkg(self):
+        rec = {"kind": "uv", "pkg": "ruff"}
+        self.assertEqual(uninstall_command(rec), "uv tool uninstall ruff")
+        self.assertEqual(update_command(rec), "uv tool upgrade ruff")
+
+    def test_legit_package_punctuation_renders_unchanged(self):
+        cases = [
+            ("npm", "npm install -g @openai/codex", "npm uninstall -g @openai/codex", "npm install -g @openai/codex@latest"),
+            ("nix", "nix profile install nixpkgs#cwal", "nix profile remove nixpkgs#cwal", "nix profile upgrade nixpkgs#cwal"),
+            ("emerge", "emerge dev-vcs/gitui::dm9pZCAq", "sudo emerge --unmerge dev-vcs/gitui::dm9pZCAq", "sudo emerge --update dev-vcs/gitui::dm9pZCAq"),
+        ]
+        for kind, command, uninstall, update in cases:
+            rec = {"kind": kind, "command": command, "pkg": "corrupt"}
+            with self.subTest(command=command):
+                self.assertEqual(uninstall_command(rec), uninstall)
+                self.assertEqual(update_command(rec), update)
+
+    def test_shell_metacharacters_are_rejected(self):
+        commands = [
+            "pip install '; rm -rf ~'",
+            "pip install '$(touch /tmp/tuistore-pwn)'",
+            "pip install 'unterminated",
+        ]
+        for command in commands:
+            rec = {"kind": "pip", "command": command, "pkg": "bad;pkg"}
+            with self.subTest(command=command):
+                self.assertIsNone(pkg_from_command("pip", command))
+                self.assertIsNone(uninstall_command(rec))
+                self.assertIsNone(update_command(rec))
+
+    def test_hostile_commandless_pkg_is_rejected(self):
+        rec = {"kind": "apt", "pkg": "foo;rm"}
+        self.assertIsNone(uninstall_command(rec))
+        self.assertIsNone(update_command(rec))
+
+    def test_go_bin_path_traversal_and_metacharacters_are_rejected(self):
+        command = "go install github.com/owner/repo/cmd/tool@latest"
+        for binn in ("x/../../victim", "tool;rm"):
+            rec = {"kind": "go", "command": command, "pkg": "tool", "bin": binn}
+            with self.subTest(bin=binn):
+                self.assertIsNone(uninstall_command(rec))
+
+    def test_status_compares_extras_method_with_bare_installed_name(self):
+        methods = [Method(kind="pip", command='pip install "yt-dlp[default]"')]
+        self.assertEqual(
+            status("yt-dlp/yt-dlp", "yt-dlp", methods, {},
+                   bins=frozenset(), pkgs={"pip": {"yt-dlp"}}),
+            "present",
         )
 
 

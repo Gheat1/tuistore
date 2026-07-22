@@ -9,6 +9,7 @@ scoring one entry is a handful of string ops.
 from __future__ import annotations
 
 import json
+import shlex
 from dataclasses import dataclass, field
 from functools import lru_cache
 from importlib import resources
@@ -205,21 +206,31 @@ def _prefer_uv(entry: Entry) -> None:
     method names a package, canonicalize a single uv method that inherits the
     most-trusted package name + source — so uv wins over pip/pipx/brew and uses
     the README-verified package name rather than a guess."""
-    from .installed import pkg_from_command
+    from .installed import _extract_target
     from .installer import make
 
-    best_src, best_pkg = None, None
-    for m in entry.methods:
-        if m.kind in ("uv", "uv-pip", "pipx", "pip"):
-            pkg = pkg_from_command(m.kind, m.command)
-            if pkg and (best_src is None
-                        or _SRC_ORDER.get(m.source, 9) < _SRC_ORDER.get(best_src, 9)):
-                best_src, best_pkg = m.source, pkg
-    if not best_pkg:
+    winner = None
+    for method in entry.methods:
+        if (method.kind in ("uv", "uv-pip", "pipx", "pip")
+                and (winner is None
+                     or _SRC_ORDER.get(method.source, 9)
+                     < _SRC_ORDER.get(winner.source, 9))):
+            winner = method
+    if not winner:
+        return
+    target = _extract_target(winner.kind, winner.command)
+    if not target:
         return
     entry.methods = [m for m in entry.methods if m.kind != "uv"]
-    entry.methods.insert(0, make("uv", f"uv tool install {best_pkg}",
-                                 source=best_src, note="python tool"))
+    if winner.kind == "uv":
+        entry.methods.insert(0, winner)
+        return
+    # ponytail: POSIX quoting only; add Windows/pwsh quoting when a Windows uv
+    # user actually reports a glob break — no Windows CI to test it against today.
+    uv = make("uv", f"uv tool install {shlex.quote(target)}",
+              source=winner.source, note=winner.note)
+    uv.os, uv.families = winner.os, winner.families
+    entry.methods.insert(0, uv)
 
 
 # ── known-incompatible package/runtime combos ────────────────────────────────
@@ -228,8 +239,7 @@ def _prefer_uv(entry: Entry) -> None:
 # hard-depends on something a later language runtime removed. Rather than
 # guess generically, the exact fix is pinned per package as reports come in.
 # Keyed by "owner/repo" slug -> {kind: replacement command}. Applied AFTER
-# _prefer_uv, since that unconditionally regenerates the uv method's command
-# and would otherwise clobber any fix baked in earlier.
+# _prefer_uv so the pin overrides the selected default method.
 QUIRKS: dict[str, dict[str, str]] = {
     # thefuck 3.32 imports distutils, removed from the stdlib in Python 3.12
     # (see PEP 632, verified empirically: present on 3.11, gone on 3.12+).
