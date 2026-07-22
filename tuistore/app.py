@@ -847,13 +847,13 @@ class StoreApp(KitApp):
         Binding("slash", "focus_search", "search"),
         Binding("i", "install", "install"),
         Binding("r", "read_readme", "readme"),
-        Binding("u", "update", "update"),
-        Binding("x", "uninstall", "remove"),
+        Binding("u", "update", "update", show=False),
+        Binding("x", "uninstall", "remove", show=False),
         Binding("s", "toggle_star", "star"),
         Binding("o", "open_browser", "open"),
-        Binding("comma", "manage", "manage"),
-        Binding("f", "features", "features"),
-        Binding("t", "cycle_kit_theme", "theme"),
+        Binding("comma", "manage", "manage", show=False),
+        Binding("f", "features", "features", show=False),
+        Binding("t", "cycle_kit_theme", "theme", show=False),
         Binding("question_mark", "help", "help"),
         Binding("q", "quit", "quit"),
         Binding("escape", "back", show=False),
@@ -984,7 +984,7 @@ class StoreApp(KitApp):
             with Vertical(id="detail"):
                 with KitScroll(id="detailscroll"):
                     yield Static(id="d-body")
-        yield Footer()
+        yield Footer(compact=True, show_command_palette=False)
 
     def on_mount(self) -> None:
         state = DIRS.load_state()
