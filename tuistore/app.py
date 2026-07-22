@@ -877,7 +877,7 @@ class StoreApp(KitApp):
     #sidebar:focus {{ border: round $kit-border-focus; border-title-color: $kit-border-focus; }}
 
     #results {{
-        width: 1fr;
+        width: 1fr; min-width: 16;
         border: round $kit-border;
         border-title-color: {palette.text}; border-subtitle-color: {palette.dim};
     }}
