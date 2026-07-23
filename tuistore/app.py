@@ -17,12 +17,12 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Footer, Input, Markdown, Static
+from textual.widgets import Input, Markdown, Static
 from textual.widgets.option_list import Option
 
 from ricekit import KitApp, icons, palette
 from ricekit.modals import HelpModal, PickerModal, ThemeModal  # noqa: F401
-from ricekit.widgets import KitScroll, NavList, Splitter, pop_in
+from ricekit.widgets import KitFooter, KitScroll, NavList, Splitter, pop_in
 
 from . import __version__, github, installed as inst, platform
 from .catalog import Catalog, Entry, load, refetch, search
@@ -984,7 +984,7 @@ class StoreApp(KitApp):
             with Vertical(id="detail"):
                 with KitScroll(id="detailscroll"):
                     yield Static(id="d-body")
-        yield Footer(compact=True, show_command_palette=False)
+        yield KitFooter(show_command_palette=False)
 
     def on_mount(self) -> None:
         state = DIRS.load_state()
