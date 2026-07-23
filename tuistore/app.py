@@ -16,6 +16,7 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
+from textual.css.query import NoMatches
 from textual.screen import ModalScreen
 from textual.widgets import Input, Markdown, Static
 from textual.widgets.option_list import Option
@@ -1310,6 +1311,16 @@ class StoreApp(KitApp):
             hint.append(f"{key} ", style=p.blue)
             hint.append(f"{lbl}   ", style=p.dim)
         t.append_text(hint)
+
+        # on_mount's initial highlight can fire before the detail pane has
+        # finished mounting (a race that got measurably more likely once
+        # KitFooter added its own extra call_after_refresh hop to startup) —
+        # retry once the tree settles instead of crashing the message pump.
+        try:
+            self.query_one("#detail")
+        except NoMatches:
+            self.call_after_refresh(lambda: self.render_detail(entry))
+            return
 
         # keep the reader's place when a background refresh re-renders the SAME
         # tool; only reset to the top when we've switched to a different tool
