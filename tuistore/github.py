@@ -26,7 +26,11 @@ async def _gh(*args: str, timeout: float = 15.0) -> tuple[int, bytes, bytes]:
         )
         out, err = await asyncio.wait_for(proc.communicate(), timeout=timeout)
         return proc.returncode or 0, out, err
-    except (FileNotFoundError, asyncio.TimeoutError):
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.communicate()
+        return 1, b"", b"timeout"
+    except FileNotFoundError:
         return 1, b"", b"timeout"
     except Exception as e:  # pragma: no cover
         return 1, b"", str(e).encode()
