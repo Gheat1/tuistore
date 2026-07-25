@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Iterable
 
 from .platform import Env
-from .shell import shell_command, shell_env, wrap_command
+from .shell import shell_command, shell_env, wrap_command, is_interactive_command
 
 # ── kind metadata ──────────────────────────────────────────────────────────
 # kind -> (label, preference[lower=better], requires, os allow, family allow)
