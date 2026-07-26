@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-07-26T05:49:13Z",
+ "generated_at": "2026-07-26T05:54:54Z",
  "source": "awesome-tuis (rothgar/awesome-tuis) + modern terminal essentials + Gheat suite",
  "count": 822,
  "entries": [
@@ -500,7 +500,7 @@
    "url": "https://github.com/openai/codex",
    "description": "Lightweight coding agent that runs in your terminal",
    "category": "Development",
-   "stars": 101475,
+   "stars": 101477,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-26T05:06:54Z",
@@ -1472,7 +1472,7 @@
    "url": "https://github.com/rclone/rclone",
    "description": "\"rsync for cloud storage\" - Google Drive, S3, Dropbox, Backblaze B2, One Drive, Swift, Hubic, Wasabi, Google Cloud Storage, Azure Blob, Azure Files, Yandex Files",
    "category": "CLI Tools",
-   "stars": 58707,
+   "stars": 58708,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-25T17:48:50Z",
@@ -4682,7 +4682,7 @@
    "url": "https://github.com/ogulcancelik/herdr",
    "description": "Agent multiplexer that lives in your terminal.",
    "category": "Development",
-   "stars": 20849,
+   "stars": 20850,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-26T01:26:44Z",
@@ -4925,7 +4925,7 @@
    "url": "https://github.com/MHNightCat/superfile",
    "description": "Pretty fancy and modern terminal file manager.",
    "category": "File Managers",
-   "stars": 19905,
+   "stars": 19906,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-26T00:37:14Z",
@@ -4980,7 +4980,7 @@
    "url": "https://github.com/yorukot/superfile",
    "description": "Pretty fancy and modern terminal file manager",
    "category": "File Managers",
-   "stars": 19905,
+   "stars": 19906,
    "language": "Go",
    "archived": false,
    "pushed_at": "2026-07-26T00:37:14Z",
@@ -5044,7 +5044,7 @@
    "url": "https://github.com/fathyb/carbonyl",
    "description": "Chromium running inside your terminal",
    "category": "Web",
-   "stars": 19287,
+   "stars": 19288,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2024-07-01T14:31:50Z",
@@ -7744,7 +7744,7 @@
    "url": "https://github.com/microsoft/inshellisense",
    "description": "IDE style command line auto complete",
    "category": "Productivity",
-   "stars": 10547,
+   "stars": 10548,
    "language": "TypeScript",
    "archived": false,
    "pushed_at": "2026-07-25T16:47:07Z",
@@ -13426,7 +13426,7 @@
    "stars": 2924,
    "language": "C",
    "archived": false,
-   "pushed_at": "2026-07-23T07:49:28Z",
+   "pushed_at": "2026-07-26T05:53:43Z",
    "homepage": "https://kewplayer.com",
    "methods": [
     {
@@ -19163,7 +19163,7 @@
    "url": "https://github.com/christo-auer/eilmeldung",
    "description": "RSS reader, supporting many RSS providers, bulk-operations and configuration options.",
    "category": "Web",
-   "stars": 916,
+   "stars": 917,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-24T19:00:20Z",
@@ -19870,7 +19870,7 @@
    "stars": 777,
    "language": "Rust",
    "archived": false,
-   "pushed_at": "2026-07-26T04:59:22Z",
+   "pushed_at": "2026-07-26T05:48:41Z",
    "homepage": "https://vinhnx.github.io",
    "methods": [
     {
@@ -25926,32 +25926,11 @@
    ]
   },
   {
-   "name": "terminalperiodictable",
-   "url": "https://github.com/velorek1/terminalperiodictable",
-   "description": "A beautiful TUI periodic table for Unix systems coded in C.",
-   "category": "Miscellaneous",
-   "stars": 144,
-   "language": "C",
-   "archived": false,
-   "pushed_at": "2025-08-01T19:13:39Z",
-   "methods": [
-    {
-     "kind": "source",
-     "command": "git clone https://github.com/velorek1/terminalperiodictable && cd terminalperiodictable",
-     "source": "inferred",
-     "requires": [
-      "git"
-     ],
-     "note": "then build per the README"
-    }
-   ]
-  },
-  {
    "name": "wlctl",
    "url": "https://github.com/aashish-thapa/wlctl",
    "description": "🛜 TUI for managing wifi/ethernet/vpn on Linux with Network Manager",
    "category": "CLI Tools",
-   "stars": 144,
+   "stars": 145,
    "language": "Rust",
    "archived": false,
    "pushed_at": "2026-07-24T18:00:35Z",
@@ -26006,6 +25985,27 @@
       "brew"
      ],
      "note": "homebrew"
+    }
+   ]
+  },
+  {
+   "name": "terminalperiodictable",
+   "url": "https://github.com/velorek1/terminalperiodictable",
+   "description": "A beautiful TUI periodic table for Unix systems coded in C.",
+   "category": "Miscellaneous",
+   "stars": 144,
+   "language": "C",
+   "archived": false,
+   "pushed_at": "2025-08-01T19:13:39Z",
+   "methods": [
+    {
+     "kind": "source",
+     "command": "git clone https://github.com/velorek1/terminalperiodictable && cd terminalperiodictable",
+     "source": "inferred",
+     "requires": [
+      "git"
+     ],
+     "note": "then build per the README"
     }
    ]
   },
@@ -32569,15 +32569,6 @@
       "git"
      ],
      "note": "then build per the README"
-    },
-    {
-     "kind": "brew",
-     "command": "brew install soundcloud-tui",
-     "source": "inferred",
-     "requires": [
-      "brew"
-     ],
-     "note": "homebrew"
     }
    ]
   },

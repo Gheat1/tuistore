@@ -351,6 +351,9 @@ ESSENTIAL_BREW = {  # keyed by owner/repo slug
 ESSENTIAL_NO_BREW = {
     # author confirmed no formula exists (github.com/Gheat1/tuistore/issues/32)
     "vashhdev/onepace",
+    # verified via formulae.brew.sh's formula + cask API (both 404) — a
+    # brand new, single-star personal project with no packaging at all
+    "laguser/soundcloud-tui",
 }
 
 
