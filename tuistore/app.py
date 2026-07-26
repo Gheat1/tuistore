@@ -8,8 +8,10 @@ doctrine — rounded borders, focus-recolor, role-based color, one animation.
 
 from __future__ import annotations
 
+import subprocess
 import webbrowser
 from datetime import datetime, timezone
+from typing import Callable
 
 from rich.text import Text
 from textual import on, work
@@ -27,8 +29,9 @@ from ricekit.widgets import KitFooter, KitScroll, NavList, Splitter, pop_in
 
 from . import __version__, github, installed as inst, platform
 from .catalog import Catalog, Entry, load, refetch, search
-from .installer import KINDS, Method, best, rank, run_stream
+from .installer import KINDS, Method, best, is_interactive_command, rank, run_stream
 from .paths import StoreDirs
+from .shell import shell_command, shell_env, wrap_command
 
 DIRS = StoreDirs()
 
@@ -79,6 +82,37 @@ def rel_time(iso: str | None) -> str:
 FEATURED_CAT = "★ Featured"
 INSTALLED_CAT = "◆ Installed"
 ALL_CAT = "All tools"
+
+
+# ── run a command, handing the terminal over when it needs one ──────────────
+async def run_maybe_interactive(app, command: str,
+                                 on_line: Callable[[str], None] | None = None) -> tuple[str, bool]:
+    """Run `command`, returning `(exit_code, interactive)`.
+
+    tuistore's normal install/update/uninstall UI (`installer.run_stream`)
+    pipes the child's stdout but never wires up its stdin, so a command that
+    prompts on the terminal — a sudo password, an AUR helper's y/N
+    confirmations — can never receive it (github.com/Gheat1/tuistore/
+    issues/31). `installer.is_interactive_command` flags those commands;
+    for them we give up the TUI's own terminal control via `App.suspend()`
+    and run with fully inherited stdio (no captured output at all), so the
+    real terminal behaves exactly as it would outside tuistore. Everything
+    else keeps streaming through `run_stream` exactly as before, calling
+    `on_line` for each output line.
+    """
+    if is_interactive_command(command):
+        shell, shell_args = shell_command()
+        with app.suspend():
+            proc = subprocess.run([shell, *shell_args, wrap_command(command)], env=shell_env())
+        return str(proc.returncode), True
+    code = "?"
+    async for kind, payload in run_stream(command):
+        if kind == "out":
+            if on_line is not None:
+                on_line(payload)
+        else:
+            code = payload
+    return code, False
 
 
 # ── install modal ────────────────────────────────────────────────────────────
@@ -272,7 +306,6 @@ class InstallModal(ModalScreen):
     async def _install(self) -> None:
         logw = self.query_one("#logtext", Static)
         lines: list[str] = []
-        code = "?"
 
         def flush() -> None:
             body = Text()
@@ -282,13 +315,12 @@ class InstallModal(ModalScreen):
             log = self.query_one("#log")
             log.scroll_end(animate=False)
 
-        async for kind, payload in run_stream(self._cmd()):
-            if kind == "out":
-                lines.append(payload)
-                if len(lines) % 2 == 0 or len(lines) < 12:
-                    flush()
-            else:
-                code = payload
+        def on_line(payload: str) -> None:
+            lines.append(payload)
+            if len(lines) % 2 == 0 or len(lines) < 12:
+                flush()
+
+        code, _interactive = await run_maybe_interactive(self.app, self._cmd(), on_line)
         flush()
 
         self.running = False
@@ -598,7 +630,6 @@ class RunModal(ModalScreen):
     async def _go(self) -> None:
         logw = self.query_one("#rlogtext", Static)
         lines: list[str] = []
-        code = "?"
 
         def flush() -> None:
             body = Text()
@@ -607,13 +638,12 @@ class RunModal(ModalScreen):
             logw.update(body)
             self.query_one("#rlog").scroll_end(animate=False)
 
-        async for kind, payload in run_stream(self.command):
-            if kind == "out":
-                lines.append(payload)
-                if len(lines) % 2 == 0 or len(lines) < 12:
-                    flush()
-            else:
-                code = payload
+        def on_line(payload: str) -> None:
+            lines.append(payload)
+            if len(lines) % 2 == 0 or len(lines) < 12:
+                flush()
+
+        code, _interactive = await run_maybe_interactive(self.app, self.command, on_line)
         self.running = False
         self.done = True
         p = palette

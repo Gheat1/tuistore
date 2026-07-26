@@ -363,6 +363,57 @@ def best(methods: Iterable[Method], env: Env) -> Method | None:
     return ranked[0] if ranked else None
 
 
+# ── does a command need real terminal access? ───────────────────────────────
+# `run_stream` below pipes a command's stdout but never wires up its stdin —
+# a child that prompts on its controlling terminal (a sudo password, an AUR
+# helper's y/N confirmations) can never receive input while tuistore is
+# streaming it that way, which is exactly the cause of
+# github.com/Gheat1/tuistore/issues/31. `is_interactive_command` flags those
+# cases so callers can hand the real terminal over instead (see app.py's use
+# of `App.suspend()`) rather than using the piped-streaming UI at all.
+_SUDO_TOKEN = re.compile(r"(?<![\w-])sudo(?![\w-])")
+_STATEMENT_SEP = re.compile(r"&&|\|\||[;\n]")
+_AUR_VERB = re.compile(r"\b(?:yay|paru)\b")
+
+
+def is_interactive_command(command: str) -> bool:
+    """Best-guess: will `command` want to read from the real terminal?
+
+    Conservative on purpose — flagging a command that never needed a real
+    terminal is a worse UX regression (loses the streamed log for nothing)
+    than missing one that did (reproduces the original hang/garbled-input
+    bug). Only two catalog-realistic cases are caught:
+
+      * `sudo` anywhere in the command, as its own token — every distro
+        package-manager template here and in `installed.py`'s
+        `_UNINSTALL`/`_UPDATE` dicts already ships with a literal `sudo `
+        prefix, so this alone covers pacman/apt/dnf/yum/zypper/xbps/apk/
+        emerge/eopkg.
+      * `yay` or `paru` as a statement's leading verb, skipping the same
+        sudo/env/arch wrapper prefixes `_CMD_PREFIX` skips for
+        `classify(..., at_start=True)` above — reused directly here rather
+        than going through `classify`, since `classify`'s yay/paru patterns
+        are anchored on the *install* flag (`-S`) and would miss the
+        `_UNINSTALL`/`_UPDATE` dicts' `yay -R {pkg}` / `paru -R {pkg}`
+        templates. AUR helpers are deliberately never run with sudo, so
+        they need their own check independent of the one above — they
+        prompt for their own confirmations (cleanbuild, PKGBUILD review,
+        etc.) regardless of sudo or which flag is used.
+
+    Checked per top-level statement (split on `&&`, `||`, `;`, newlines) so
+    a multi-command script — e.g. the TUI's "update all" action, which joins
+    several `echo "== name =="; cmd; echo` lines — is still caught even when
+    the interactive command isn't the very first statement.
+    """
+    if _SUDO_TOKEN.search(command):
+        return True
+    for stmt in _STATEMENT_SEP.split(command):
+        m = _AUR_VERB.search(stmt)
+        if m and _CMD_PREFIX.fullmatch(stmt[: m.start()]):
+            return True
+    return False
+
+
 # ── run an install, streaming output ───────────────────────────────────────
 async def run_stream(command: str) -> AsyncIterator[tuple[str, str]]:
     """Execute `command` in a login shell, yielding ("out", line) as it runs
