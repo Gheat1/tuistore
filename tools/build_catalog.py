@@ -227,6 +227,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("gping", "https://github.com/orf/gping", "Dashboards"),
     ("wlocks", "https://github.com/programmersd21/wlocks", "Dashboards"),
     ("flow", "https://github.com/programmersd21/flow", "Dashboards"),
+    ("stocksTUI", "https://github.com/andriy-git/stocksTUI", "Dashboards"),
     # File Managers
     ("yazi", "https://github.com/sxyazi/yazi", "File Managers"),
     ("nnn", "https://github.com/jarun/nnn", "File Managers"),
@@ -248,6 +249,8 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("chafa", "https://github.com/hpjansson/chafa", "Multimedia"),
     ("viu", "https://github.com/atanunq/viu", "Multimedia"),
     ("timg", "https://github.com/hzeller/timg", "Multimedia"),
+    ("soundcloud-tui", "https://github.com/laguser/soundcloud-tui", "Multimedia"),
+    ("onepace", "https://github.com/vashhdev/onepace", "Multimedia"),
     # Productivity
     ("Taskwarrior", "https://github.com/GothenburgBitFactory/taskwarrior", "Productivity"),
     ("calcure", "https://github.com/anufrievroman/calcure", "Productivity"),
@@ -340,6 +343,14 @@ ESSENTIAL_BREW = {  # keyed by owner/repo slug
     "GothenburgBitFactory/taskwarrior": "task",
     "pipeseroni/pipes.sh": "pipes-sh",
     "aome510/spotify-player": "spotify_player",
+}
+
+# Essentials confirmed to have no Homebrew formula at all — skip the guessed
+# `brew install <repo-name>` fallback rather than invent one that doesn't
+# exist and would just 404.
+ESSENTIAL_NO_BREW = {
+    # author confirmed no formula exists (github.com/Gheat1/tuistore/issues/32)
+    "vashhdev/onepace",
 }
 
 
@@ -519,9 +530,11 @@ async def add_methods(entries: list[dict], scrape_top: int) -> None:
         # the naive guess below and must not be allowed to coexist with it.
         if e.get("_essential") and not has_method_kind(methods, "brew"):
             owner, repo = parse_repo(e["url"])
-            formula = ESSENTIAL_BREW.get(f"{owner}/{repo}", repo.lower())
-            methods.append(make("brew", f"brew install {formula}",
-                                source="inferred", note="homebrew").to_dict())
+            slug = f"{owner}/{repo}"
+            if slug not in ESSENTIAL_NO_BREW:
+                formula = ESSENTIAL_BREW.get(slug, repo.lower())
+                methods.append(make("brew", f"brew install {formula}",
+                                    source="inferred", note="homebrew").to_dict())
         deduped = dedupe_methods(methods)
         if deduped:
             e["methods"] = deduped
