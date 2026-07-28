@@ -47,6 +47,25 @@ class Entry:
     def is_github(self) -> bool:
         return parse_repo(self.url) is not None
 
+    @property
+    def browse_url(self) -> str:
+        """A URL that is safe to hand to the system browser.
+
+        `homepage` comes verbatim from the repo owner's GitHub `homepageUrl`,
+        so it can carry any scheme — and `webbrowser.open()` dispatches a
+        non-http scheme to whatever desktop handler is registered for it
+        (the shipped catalog already contains an `ssh://` homepage). Only
+        http/https pass through; a schemeless value is treated as a bare
+        domain and upgraded to https; anything else falls back to the repo
+        URL, which is always a well-formed https GitHub link.
+        """
+        homepage = (self.homepage or "").strip()
+        if not homepage:
+            return self.url
+        if ":" not in homepage:
+            homepage = f"https://{homepage}"
+        return homepage if homepage.lower().startswith(("http://", "https://")) else self.url
+
     # ── (de)serialize ──────────────────────────────────────────────────
     def to_dict(self) -> dict:
         d = {"name": self.name, "url": self.url, "description": self.description,
