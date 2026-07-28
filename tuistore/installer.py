@@ -101,8 +101,11 @@ class Method:
         """How much to trust this command:
         - "verified"   maintainer-curated (featured tools)
         - "community"  taken verbatim from the project's own README
-        - "unverified" guessed from the repo (name may be wrong / squattable)
+        - "unverified" guessed from the repo (name may be wrong / squattable),
+                       or the line chains a command we can't vouch for
         """
+        if self.foreign_commands:
+            return "unverified"
         if self.source == "official":
             return "verified"
         if self.source == "readme":
@@ -113,6 +116,16 @@ class Method:
     def is_script(self) -> bool:
         """A remote install script (curl|sh) — highest-risk, always warn."""
         return self.kind == "script"
+
+    @property
+    def foreign_commands(self) -> list[str]:
+        """Chained sub-commands this method runs that aren't package-manager
+        calls. Empty for `script` (already carries its own loud warning) and
+        `source` (a `git clone && cd` is the honest, self-generated fallback,
+        not a scraped surprise)."""
+        if self.kind in ("script", "source", "manual"):
+            return []
+        return foreign_segments(self.command)
 
     @property
     def is_bare_clone(self) -> bool:
@@ -259,6 +272,49 @@ _CLASSIFY = [
     ("script", re.compile(r"\bcurl\b.*\|\s*(?:sudo\s+)?(?:sh|bash)\b|\bwget\b.*\|\s*(?:sudo\s+)?(?:sh|bash)\b")),
     ("script", re.compile(r"(?i)\b(?:iwr|invoke-webrequest)\b.*\|\s*(?:iex|invoke-expression)\b")),
 ]
+
+
+# ── chained-command detection ──────────────────────────────────────────────
+# The binaries that may legitimately appear in an install command's chain.
+# Derived from the KINDS table so it stays in sync automatically. "script"
+# and "source" are excluded on purpose: their `requires` are curl and git,
+# which are exactly the tools a hostile chained command would use.
+MANAGER_BINARIES: frozenset[str] = frozenset(
+    binary
+    for kind, meta in KINDS.items()
+    if kind not in ("script", "source", "manual")
+    for binary in meta.get("requires", [])
+) | frozenset({"apt-get", "nala", "nix-env", "pip", "python", "python3"})
+
+# Shell operators that start a new command within one line.
+_CHAIN_SPLIT = re.compile(r"&&|\|\||\||;|\n")
+# The same wrapper tokens `_CMD_PREFIX` tolerates, stripped from one segment
+# so `sudo apt update` is judged on "apt", not on "sudo".
+_SEGMENT_PREFIX = re.compile(
+    r"^(?:(?:sudo|doas|env)(?:\s+-\S+)*\s+|"
+    r"[A-Za-z_][A-Za-z0-9_]*=(?:'[^']*'|\"[^\"]*\"|\S+)\s+|arch\s+-\S+\s+)*"
+)
+
+
+def foreign_segments(command: str) -> list[str]:
+    """Chained sub-commands that are not package-manager invocations.
+
+    `classify()` only inspects the install verb; it deliberately tolerates a
+    prior chained command so that real two-step lines ("apt update && apt
+    install x") keep working. That tolerance means a scraped README line can
+    also carry something entirely unrelated — "curl … | sh && brew install x"
+    classifies as `brew` — and the trust badge would otherwise vouch for it.
+    Anything here means: show the command, but do not vouch for it.
+    """
+    out: list[str] = []
+    for raw in _CHAIN_SPLIT.split(command):
+        segment = raw.strip()
+        if not segment:
+            continue
+        words = _SEGMENT_PREFIX.sub("", segment).split()
+        if not words or words[0] not in MANAGER_BINARIES:
+            out.append(segment)
+    return out
 
 
 # leading tokens allowed *before* the install verb on a real command line:

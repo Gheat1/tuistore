@@ -199,6 +199,14 @@ class InstallModal(ModalScreen):
             tb.append("⚠  ", style=f"bold {p.peach}")
             tb.append("this runs a remote install script — ", style=p.peach)
             tb.append("read it before you run it", style=f"bold {p.peach}")
+        elif m.foreign_commands:
+            # The line classifies as an installer but also runs something we
+            # can't vouch for — name it rather than showing a green check.
+            warn = True
+            tb.append("⚠  ", style=f"bold {p.peach}")
+            tb.append("also runs ", style=p.peach)
+            tb.append(f"`{m.foreign_commands[0]}`", style=f"bold {p.peach}")
+            tb.append(" — read the whole line before you run it", style=p.peach)
         elif m.trust == "unverified":
             warn = True
             tb.append("⚠  ", style=f"bold {p.peach}")
