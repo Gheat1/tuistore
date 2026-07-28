@@ -197,8 +197,9 @@ class InstallModal(ModalScreen):
         if m.is_script:
             warn = True
             tb.append("⚠  ", style=f"bold {p.peach}")
-            tb.append("this runs a remote install script — ", style=p.peach)
-            tb.append("read it before you run it", style=f"bold {p.peach}")
+            tb.append("runs a script downloaded from ", style=p.peach)
+            tb.append(m.script_host or "an unknown host", style=f"bold {p.peach}")
+            tb.append(" — read it before you run it", style=p.peach)
         elif m.foreign_commands:
             # The line classifies as an installer but also runs something we
             # can't vouch for — name it rather than showing a green check.

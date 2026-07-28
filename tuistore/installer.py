@@ -19,6 +19,7 @@ import asyncio
 import re
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Iterable
+from urllib.parse import urlparse
 
 from .platform import Env
 from .shell import shell_command, shell_env, wrap_command
@@ -74,6 +75,31 @@ def _script_os(command: str) -> list[str] | None:
     return None
 
 
+# URLs appearing on a command line, up to the first shell/quote delimiter.
+_URL_IN_COMMAND = re.compile(r"https?://[^\s'\"|;)]+")
+
+
+def command_urls(command: str) -> list[str]:
+    """Every http(s) URL on a command line, in order."""
+    return _URL_IN_COMMAND.findall(command)
+
+
+def script_host(command: str) -> str | None:
+    """The host a remote install script downloads from, when there is one.
+
+    The user's real question about a `curl … | sh` line is "whose script is
+    this?", and the answer is the host — not the tool name, which lives in
+    an attacker-controlled path segment just as easily as in a real one.
+    """
+    for url in command_urls(command):
+        host = urlparse(url).netloc.lower()
+        # strip credentials and port: "user@host:443" -> "host"
+        host = host.rpartition("@")[2].partition(":")[0]
+        if host:
+            return host
+    return None
+
+
 def _required_tools(method: "Method") -> list[str]:
     """Dependencies after accounting for a PowerShell-native script."""
     if method.kind == "script" and _script_os(method.command) == ["windows"]:
@@ -116,6 +142,11 @@ class Method:
     def is_script(self) -> bool:
         """A remote install script (curl|sh) — highest-risk, always warn."""
         return self.kind == "script"
+
+    @property
+    def script_host(self) -> str | None:
+        """Host this method downloads a script from, for the warning banner."""
+        return script_host(self.command)
 
     @property
     def foreign_commands(self) -> list[str]:

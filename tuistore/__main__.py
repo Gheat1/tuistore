@@ -121,7 +121,8 @@ def _install_one(name: str, *, yes: bool, dry_run: bool, method_kind: str | None
     trust = {"verified": "✓ verified", "community": "✓ from README",
              "unverified": "⚠ unverified — guessed"}[chosen.trust]
     if chosen.is_script:
-        trust = "⚠ remote install script — review it"
+        host = chosen.script_host or "an unknown host"
+        trust = f"⚠ remote install script from {host} — review it"
     elif chosen.foreign_commands:
         trust = f"⚠ also runs `{chosen.foreign_commands[0]}` — read the whole line"
     print(f"{entry.name}  ({entry.slug})" + ("  · reinstall" if force else ""))
