@@ -521,7 +521,7 @@ class ReadmeModal(ModalScreen):
             Text("j/k scroll · o open in browser · esc close", style=p.dim))
 
     def action_browser(self) -> None:
-        webbrowser.open(self.entry.homepage or self.entry.url)
+        webbrowser.open(self.entry.browse_url)
         self.app.notify(f"opened {self.entry.url}")
 
     def action_close(self) -> None:
@@ -1670,7 +1670,7 @@ class StoreApp(KitApp):
     def action_open_browser(self) -> None:
         if not self.current:
             return
-        url = self.current.homepage or self.current.url
+        url = self.current.browse_url
         webbrowser.open(url)
         self.notify(f"opened {url}")
 
