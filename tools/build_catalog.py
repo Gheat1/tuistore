@@ -122,6 +122,53 @@ FEATURED = [
         author_note="by @moeen-mahmud · a satisfying way to watch your commit streak in the terminal",
         methods=[("npm", "npm install -g termheat", "official")],
     ),
+    dict(
+        name="tele", url="https://github.com/sorokin-vladimir/tele",
+        category="Messaging", language="Go",
+        description="A terminal-native Telegram client for keyboard-driven workflows — vim-style navigation, inline photos over the Kitty graphics protocol, voice notes with waveforms, and drafts synced with Telegram's servers.",
+        author_note="by @sorokin-vladimir · Telegram without leaving the terminal — one static binary, ~50MB RSS, fine over SSH",
+        # Curated rather than scraped, because tele's README does not scrape
+        # cleanly: its brew/apt/dnf/apk lines each need a preceding step (a tap,
+        # or a fury.io repo) and fail on their own, and `brew install tele-beta`
+        # is the beta channel. `go install` is left out on purpose — every
+        # packaged build bakes in Telegram API credentials via -ldflags, and a
+        # plain go build has none, so the binary exits asking for an api_id and
+        # api_hash of your own.
+        methods=[("brew",
+                  "brew tap sorokin-vladimir/tap && brew trust sorokin-vladimir/tap && brew install tele",
+                  "official"),
+                 ("yay", "yay -S tele-bin", "official"),
+                 ("nix", "nix profile install github:sorokin-vladimir/tele", "official"),
+                 ("script",
+                  "curl -sL https://raw.githubusercontent.com/sorokin-vladimir/tele/main/scripts/install.sh | sh",
+                  "official")],
+    ),
+    dict(
+        name="soundcloud-tui", url="https://github.com/laguser/soundcloud-tui",
+        category="Multimedia", language="Python",
+        description="A small SoundCloud player for the terminal — search and stream tracks from a Textual UI, audio pulled with yt-dlp and played through pygame.",
+        author_note="by @laguser · a source checkout rather than a package: it lands in ~/.local/share with a launcher in ~/.local/bin",
+        # Featured purely to curate the install. Upstream ships no packaging at
+        # all — nothing on PyPI, no pyproject, and `install.py` is the app
+        # itself rather than an installer — so the language-inferred
+        # `pipx/uv install soundcloud-tui` a plain listing gets are phantoms.
+        # Its README can't be used verbatim either: the Linux block activates
+        # the venv by the Windows path. This clones into ~/.local/share, builds
+        # a venv holding the four deps install.py imports, and writes a launcher
+        # onto PATH so verify_landed() can confirm the install landed. The
+        # ESSENTIALS entry for this repo below is left in place and skipped by
+        # the featured-slug dedupe, so removing this block falls back to it.
+        methods=[("source",
+                  "git clone https://github.com/laguser/soundcloud-tui ~/.local/share/soundcloud-tui"
+                  " && python3 -m venv ~/.local/share/soundcloud-tui/venv"
+                  " && ~/.local/share/soundcloud-tui/venv/bin/pip install textual pygame-ce yt-dlp requests"
+                  " && mkdir -p ~/.local/bin"
+                  " && printf '#!/bin/sh\\nexec \"$HOME/.local/share/soundcloud-tui/venv/bin/python\""
+                  " \"$HOME/.local/share/soundcloud-tui/install.py\" \"$@\"\\n'"
+                  " > ~/.local/bin/soundcloud-tui"
+                  " && chmod +x ~/.local/bin/soundcloud-tui",
+                  "official")],
+    ),
 ]
 
 # ── popular terminal apps beyond awesome-tuis ────────────────────────────────
@@ -210,6 +257,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     # this must stay matching awesome-tuis's stale URL to dedupe correctly.
     ("gitui", "https://github.com/extrawurst/gitui", "Development"),
     ("ghostty-config-cli", "https://github.com/ajr-khll/ghostty-config-cli", "Development"),
+    ("kranz", "https://github.com/kranz-org/kranz", "Development"),
     # Dashboards / System
     ("fastfetch", "https://github.com/fastfetch-cli/fastfetch", "Dashboards"),
     ("neofetch", "https://github.com/dylanaraps/neofetch", "Dashboards"),
@@ -249,6 +297,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("chafa", "https://github.com/hpjansson/chafa", "Multimedia"),
     ("viu", "https://github.com/atanunq/viu", "Multimedia"),
     ("timg", "https://github.com/hzeller/timg", "Multimedia"),
+    ("opentune", "https://github.com/rpnchlr/opentune", "Multimedia"),
     ("soundcloud-tui", "https://github.com/laguser/soundcloud-tui", "Multimedia"),
     ("onepace", "https://github.com/vashhdev/onepace", "Multimedia"),
     # Productivity
@@ -354,6 +403,12 @@ ESSENTIAL_NO_BREW = {
     # verified via formulae.brew.sh's formula + cask API (both 404) — a
     # brand new, single-star personal project with no packaging at all
     "laguser/soundcloud-tui",
+    # `brew info --formula opentune` 404s (brew suggests "openturns"); it is a
+    # PyPI-only project, installed with pipx/uv
+    "rpnchlr/opentune",
+    # likewise `brew info --formula stockstui` 404s (brew suggests "stockfish")
+    # — published to PyPI as stocksTUI, so pipx/uv are the real installs
+    "andriy-git/stocksTUI",
 }
 
 
