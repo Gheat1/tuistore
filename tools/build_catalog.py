@@ -258,6 +258,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("gitui", "https://github.com/extrawurst/gitui", "Development"),
     ("ghostty-config-cli", "https://github.com/ajr-khll/ghostty-config-cli", "Development"),
     ("kranz", "https://github.com/kranz-org/kranz", "Development"),
+    ("pythonlings", "https://github.com/abhiksark/pythonlings", "Development"),
     # Dashboards / System
     ("fastfetch", "https://github.com/fastfetch-cli/fastfetch", "Dashboards"),
     ("neofetch", "https://github.com/dylanaraps/neofetch", "Dashboards"),
@@ -409,6 +410,9 @@ ESSENTIAL_NO_BREW = {
     # likewise `brew info --formula stockstui` 404s (brew suggests "stockfish")
     # — published to PyPI as stocksTUI, so pipx/uv are the real installs
     "andriy-git/stocksTUI",
+    # `brew info --formula pythonlings` 404s (brew suggests "python-packaging"),
+    # and so does the cask API — it ships on PyPI only, as `pythonlings`
+    "abhiksark/pythonlings",
 }
 
 
