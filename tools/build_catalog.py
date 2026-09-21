@@ -169,6 +169,36 @@ FEATURED = [
                   " && chmod +x ~/.local/bin/soundcloud-tui",
                   "official")],
     ),
+    dict(
+        name="mew", url="https://github.com/programmersd21/mew",
+        category="Dashboards", language="Rust",
+        description="A zero-daemon terminal companion and git workspace dashboard — branch and dirty/staged/conflict/ahead state, project language with live toolchain version, lines of code, coverage, and cpu/memory/disk/uptime, all in one card.",
+        author_note="by @programmersd21 · one card for the repo you are standing in — shell hooks for bash, zsh, fish, nu and PowerShell",
+        # Featured to curate the install: the crate is published as `mew-cli`
+        # (the binary is still `mew`), while the crates.io name `mew` belongs to
+        # an unrelated project at mew-build/mew — so the Rust-inferred
+        # `cargo install mew` a plain listing gets would install someone else's
+        # package. `nix profile install` is left out on purpose: flake.nix
+        # declares x86_64-linux only, so it fails on macOS and on ARM Linux.
+        methods=[("cargo", "cargo install mew-cli", "official"),
+                 ("yay", "yay -S mew-bin", "official"),
+                 ("script",
+                  "curl -sSf https://raw.githubusercontent.com/programmersd21/mew/main/scripts/install.sh | bash",
+                  "official")],
+    ),
+    dict(
+        name="YYLO", url="https://github.com/yylo-dev/yylo",
+        category="Development", language="TypeScript",
+        description="A terminal orchestrator for AI coding agents — a Kanban that fans tasks out to Claude Code, Codex, Gemini CLI and friends, each in its own git worktree, and merges verified results back through typed task and merge boundaries.",
+        author_note="by @yylo-dev · run several coding agents side by side, one worktree each",
+        # Featured to curate the install: GitHub reads the repo as Python (it is
+        # a near-even Python/TypeScript split), so a plain listing would infer
+        # `uv tool install yylo` and `pipx install yylo` — both phantoms,
+        # there is no `yylo` on PyPI. The shipped CLI is the npm package
+        # `@yylo/cli`, whose package.json points back at this repo and whose
+        # bins (`yylo`, `yy`, `ypl`) land on PATH.
+        methods=[("npm", 'npm install --global \'@yylo/cli@latest\'', "official")],
+    ),
 ]
 
 # ── popular terminal apps beyond awesome-tuis ────────────────────────────────
@@ -277,6 +307,7 @@ ESSENTIALS: list[tuple[str, str, str]] = [
     ("wlocks", "https://github.com/programmersd21/wlocks", "Dashboards"),
     ("flow", "https://github.com/programmersd21/flow", "Dashboards"),
     ("stocksTUI", "https://github.com/andriy-git/stocksTUI", "Dashboards"),
+    ("linecast", "https://github.com/ashuttl/linecast", "Dashboards"),
     # File Managers
     ("yazi", "https://github.com/sxyazi/yazi", "File Managers"),
     ("nnn", "https://github.com/jarun/nnn", "File Managers"),
