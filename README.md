@@ -250,14 +250,13 @@ XDG-style dirs on macOS and Linux; Local AppData on Windows:
 
 ## star history
 
-<div align="center">
-<a href="https://star-history.com/#Gheat1/tuistore&Date">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/star-history-dark.svg">
-<img src="assets/star-history-light.svg" alt="star history" width="70%">
-</picture>
+<a href="https://www.star-history.com/?type=date&repos=Gheat1%2Ftuistore">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Gheat1/tuistore&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Gheat1/tuistore&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Gheat1/tuistore&type=date&legend=top-left" />
+ </picture>
 </a>
-</div>
 
 ## contributing
 
