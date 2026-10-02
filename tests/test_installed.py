@@ -5,6 +5,7 @@ from unittest import mock
 
 from tuistore.installed import (
     _extract_target,
+    _run,
     load_ledger,
     pkg_from_command,
     record_install,
@@ -16,6 +17,13 @@ from tuistore.installed import (
 )
 from tuistore.installer import Method
 from tuistore.platform import Env
+
+
+class RunManagerCommandTest(unittest.TestCase):
+    def test_successful_command_without_captured_stdout_returns_empty_string(self) -> None:
+        completed = mock.Mock(returncode=0, stdout=None)
+        with mock.patch("tuistore.installed.subprocess.run", return_value=completed):
+            self.assertEqual(_run(["winget", "list"]), "")
 
 
 class TestPkgFromCommandScopedNpm(unittest.TestCase):

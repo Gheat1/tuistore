@@ -442,7 +442,7 @@ def status(slug: str, name: str, methods: list[Method], ledger: dict,
 def _run(cmd: list[str], timeout: float = 25.0) -> str:
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-        return r.stdout if r.returncode == 0 else ""
+        return (r.stdout or "") if r.returncode == 0 else ""
     except Exception:
         return ""
 
