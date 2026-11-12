@@ -1,5 +1,38 @@
 # changelog
 
+## 0.4.6
+
+- Catalog grew from 818 to 861 tools.
+- Install-command safety:
+  - tuistore no longer vouches for an install command that chains a
+    foreign command onto it.
+  - Install-script provenance is scoped to the script's URL, and warnings
+    name the host.
+  - Only `http` / `https` URLs are handed to the system browser.
+- Installs and lifecycle commands:
+  - `sudo` / AUR-helper commands get the real terminal, so password
+    prompts work.
+  - Fixed package-name parsing that corrupted installs and
+    update/uninstall commands: scoped npm names (`@scope/name`), `git+`
+    VCS specs, yarn installs, and pip/uv flags that take a value.
+  - Added the missing bun and yarn update commands; `uv pip install X` is
+    no longer treated as plain pip.
+  - `tuistore update <tool>` works when a flag comes before the tool name.
+  - Self-update picks the right manager when both uv and pipx are on PATH.
+  - Fixed PATH loss when install commands run through a login shell on
+    Debian/Ubuntu.
+  - Homebrew detection uses real Cellar paths (including Linuxbrew's), and
+    a guessed brew fallback no longer sits beside the real scraped one.
+  - dnf/yum availability is gated correctly on RHEL 7 / CentOS 7 / Amazon
+    Linux 2.
+  - Fixed a winget listing bug.
+- README scraping: usage examples and bare `#` comment lines are no longer
+  picked up as install commands, while real chained or env-prefixed
+  commands and `wget ... | sudo bash` scripts are accepted.
+- UI: fixed a crash on terminals narrower than 80 columns, a startup race
+  in the detail pane, and the footer disappearing on small screens.
+- GitHub: timed-out `gh` processes are cleaned up.
+
 ## 0.4.5
 
 - Linux distro coverage fixes:
